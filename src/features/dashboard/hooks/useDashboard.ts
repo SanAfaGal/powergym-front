@@ -18,6 +18,15 @@ export const dashboardKeys = {
 /**
  * Hook for dashboard data with optional period and date filters
  * Uses optimized React Query configuration from constants
+ * 
+ * Nota: Cuando cambian los parámetros (period/date), React Query automáticamente
+ * hace refetch porque la queryKey cambia. Esto es intencional y necesario para
+ * mostrar los datos correctos cuando el usuario cambia los filtros.
+ * 
+ * Las peticiones automáticas están deshabilitadas para:
+ * - refetchOnWindowFocus: false (no refetch al enfocar la ventana)
+ * - refetchOnMount: false (configurado globalmente en queryClient)
+ * - refetchOnReconnect: false (configurado globalmente en queryClient)
  */
 export const useDashboard = (params?: DashboardQueryParams) => {
   return useQuery({
@@ -27,7 +36,7 @@ export const useDashboard = (params?: DashboardQueryParams) => {
     gcTime: QUERY_CACHE_TIMES.dashboard,
     retry: RETRY_CONFIG.retries,
     retryDelay: RETRY_CONFIG.retryDelay,
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches when tab is focused
+    refetchOnWindowFocus: false, // No refetch automático al enfocar la ventana
   });
 };
 

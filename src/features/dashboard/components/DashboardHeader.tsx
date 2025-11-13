@@ -39,24 +39,19 @@ export const DashboardHeader = ({
     <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
       <div className="px-3 sm:px-4 py-2.5 sm:py-3">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          {/* Título y Info - Mejor Contraste */}
+          {/* Info de Período y Fecha */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md flex-shrink-0">
               <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={2.5} />
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-powergym-charcoal mb-1 leading-tight truncate">
-                Panel de Control
-              </h1>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded-lg border border-blue-200">
-                  <TrendingUp className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold text-blue-700 truncate">{periodLabel}</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-lg border border-green-200">
-                  <Calendar className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-semibold text-green-700 truncate">{dateRangeLabel}</span>
-                </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded-lg border border-blue-200">
+                <TrendingUp className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs font-semibold text-blue-700 truncate">{periodLabel}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-lg border border-green-200">
+                <Calendar className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs font-semibold text-green-700 truncate">{dateRangeLabel}</span>
               </div>
             </div>
           </div>

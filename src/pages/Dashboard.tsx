@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { useAuth } from '../features/auth';
@@ -55,6 +55,10 @@ export const Dashboard = () => {
   // Hook personalizado para gestionar el estado del recordatorio de membresías
   const { hasShownReminder, markAsShown } = useMembershipReminder();
 
+  // Ref para rastrear si ya se intentó mostrar el recordatorio en esta sesión
+  // Esto evita que se muestre durante refetches de filtros
+  const hasAttemptedToShowReminder = useRef(false);
+
   // Use custom hook for dashboard home logic
   const {
     period,
@@ -73,12 +77,34 @@ export const Dashboard = () => {
   } = useDashboardHome();
 
   // Mostrar el modal automáticamente cuando se carga el dashboard por primera vez en la sesión
+  // Solo se muestra una vez, no durante refetches causados por cambios de filtros
   useEffect(() => {
-    if (!isDashboardLoading && dashboardData && !hasShownReminder) {
+    // Verificar directamente sessionStorage para evitar problemas de sincronización
+    const STORAGE_KEY = 'membership_reminder_shown';
+    const reminderShownInStorage = typeof window !== 'undefined' 
+      ? sessionStorage.getItem(STORAGE_KEY) === 'true'
+      : false;
+
+    // Solo mostrar el recordatorio si:
+    // 1. El dashboard terminó de cargar (no está en loading inicial)
+    // 2. Hay datos del dashboard
+    // 3. No se ha mostrado antes (ni en estado ni en sessionStorage)
+    // 4. No es un refetch (solo en la carga inicial)
+    // 5. No se ha intentado mostrar antes en esta sesión
+    const shouldShowReminder = 
+      !isDashboardLoading && 
+      !isDashboardRefetching &&
+      dashboardData && 
+      !reminderShownInStorage &&
+      !hasShownReminder &&
+      !hasAttemptedToShowReminder.current;
+
+    if (shouldShowReminder) {
       setIsReminderModalOpen(true);
       markAsShown();
+      hasAttemptedToShowReminder.current = true;
     }
-  }, [isDashboardLoading, dashboardData, hasShownReminder, markAsShown]);
+  }, [isDashboardLoading, isDashboardRefetching, dashboardData, hasShownReminder, markAsShown]);
 
   const handleCloseReminder = () => {
     setIsReminderModalOpen(false);
