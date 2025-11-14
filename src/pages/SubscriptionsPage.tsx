@@ -22,7 +22,7 @@ export const SubscriptionsPage: React.FC = () => {
     limit: DEFAULT_PAGINATION.limit,
     offset: DEFAULT_PAGINATION.offset,
   });
-  const [shouldFetch, setShouldFetch] = useState(false); // Solo cargar cuando el usuario lo solicite
+  const [shouldFetch, setShouldFetch] = useState(true); // Cargar automáticamente al entrar a la página
   const [lastActionResult, setLastActionResult] = useState<{
     type: 'expire' | 'activate';
     count: number;
