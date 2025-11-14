@@ -1,30 +1,51 @@
+// External dependencies
 import { memo } from 'react';
-import { Edit2, Eye, Trash2, Phone } from 'lucide-react';
+import { Edit2, Eye, Trash2, CheckCircle, Phone } from 'lucide-react';
+
+// Internal shared components
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { IconButton } from '@/components/ui/IconButton';
+
+// Feature imports
 import { clientHelpers, type Client } from '../..';
 
+/**
+ * Props for ClientCard component
+ */
 interface ClientCardProps {
+  /** Client data to display */
   client: Client;
+  /** Optional callback when viewing client details */
   onView?: (clientId: string) => void;
+  /** Callback when editing client */
   onEdit: (client: Client) => void;
+  /** Callback when deactivating client */
   onDelete: (client: Client) => void;
+  /** Optional callback when activating client */
+  onActivate?: (client: Client) => void;
+  /** Whether a delete/activate operation is in progress */
   isDeleting?: boolean;
 }
 
 /**
- * Componente de card individual para mostrar información de un cliente
- * Diseño compacto y limpio, optimizado para móvil y tablet
+ * ClientCard - Individual client card component
+ * 
+ * Displays client information in a compact card format, optimized for mobile and tablet.
+ * Supports view, edit, delete (deactivate), and activate actions.
+ * 
+ * @param props - ClientCard component props
+ * @returns JSX element
  */
 export const ClientCard = memo(({
   client,
   onView,
   onEdit,
   onDelete,
+  onActivate,
   isDeleting = false,
-}: ClientCardProps) => {
+}: ClientCardProps): JSX.Element => {
   const fullName = clientHelpers.formatFullName(client);
 
   return (
@@ -84,7 +105,7 @@ export const ClientCard = memo(({
             aria-label="Editar cliente"
             title="Editar"
           />
-          {client.is_active && (
+          {client.is_active ? (
             <IconButton
               icon={Trash2}
               onClick={() => onDelete(client)}
@@ -94,6 +115,19 @@ export const ClientCard = memo(({
               aria-label="Inactivar cliente"
               title="Inactivar cliente"
             />
+          ) : (
+            onActivate && (
+              <IconButton
+                icon={CheckCircle}
+                onClick={() => onActivate(client)}
+                variant="primary"
+                size="md"
+                disabled={isDeleting}
+                aria-label="Activar cliente"
+                title="Activar cliente"
+                className="!text-gray-400 hover:!text-green-600 hover:!bg-green-50/50"
+              />
+            )
           )}
         </div>
       </div>

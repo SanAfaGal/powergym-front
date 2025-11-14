@@ -1,21 +1,46 @@
+// External dependencies
 import React, { memo } from 'react';
-import { User, Phone, MessageCircle, MapPin, Mail, Edit, Fingerprint } from 'lucide-react';
+import { User, Phone, MessageCircle, MapPin, Mail, Edit, Fingerprint, CheckCircle } from 'lucide-react';
+
+// Internal shared components
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
 import { BiometricStatus } from '../../../components/biometrics/BiometricStatus';
+
+// Feature imports
 import { type Client, clientHelpers } from '../..';
 import { type ClientDashboardResponse } from '../..';
 
+/**
+ * Props for ClientInfoTab component
+ */
 interface ClientInfoTabProps {
+  /** Client data */
   client: Client;
+  /** Optional dashboard data */
   dashboard?: ClientDashboardResponse;
+  /** Callback for phone call action */
   onCall: () => void;
+  /** Callback for WhatsApp action */
   onWhatsApp: () => void;
+  /** Callback for edit action */
   onEdit: () => void;
+  /** Callback for biometric action */
   onBiometric: () => void;
+  /** Optional callback for activate action */
+  onActivate?: () => void;
 }
 
+/**
+ * ClientInfoTab - Client information display component
+ * 
+ * Displays comprehensive client information including personal data,
+ * contact information, and biometric status.
+ * 
+ * @param props - ClientInfoTab component props
+ * @returns JSX element
+ */
 export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({ 
   client, 
   dashboard,
@@ -23,7 +48,8 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
   onWhatsApp,
   onEdit,
   onBiometric,
-}) => {
+  onActivate,
+}): JSX.Element => {
   const age = clientHelpers.calculateAge(client.birth_date);
   const fullName = dashboard ? `${dashboard.client.first_name} ${dashboard.client.last_name}` : 
                    `${client.first_name} ${client.last_name}`;
@@ -55,6 +81,18 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          {!client.is_active && onActivate && (
+            <Button
+              onClick={onActivate}
+              size="sm"
+              variant="primary"
+              leftIcon={<CheckCircle className="w-4 h-4" />}
+              className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
+            >
+              <span className="hidden sm:inline">Activar Cliente</span>
+              <span className="sm:hidden">Activar</span>
+            </Button>
+          )}
           <Button
             onClick={onEdit}
             size="sm"

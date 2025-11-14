@@ -1,6 +1,9 @@
+// External dependencies
 import { useState, useMemo, useCallback, memo } from 'react';
-import { Search, Plus, Edit2, Eye, Trash2, UserCircle2, Phone, Mail, Calendar, Filter } from 'lucide-react';
+import { Search, Plus, Edit2, Eye, Trash2, CheckCircle, UserCircle2, Phone, Mail, Calendar, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Internal shared components
 import { Button } from '@/components/ui/Button';
 import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Input } from '@/components/ui/Input';
@@ -9,32 +12,54 @@ import { Avatar } from '@/components/ui/Avatar';
 import { IconButton } from '@/components/ui/IconButton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageLayout } from '@/components/ui/PageLayout';
+import { useToast, logger, useMediaQuery } from '@/shared';
+
+// Feature components
 import { ClientFormModal } from './ClientFormModal';
 import { ClientCards } from './ClientCards';
-import { useToast, logger, useMediaQuery } from '@/shared';
-import { useClients, useDeleteClient, clientHelpers, type Client } from '../..';
+import { useClients, clientHelpers, type Client } from '../..';
+import { useClientStatusToggle } from '../hooks/useClientStatusToggle';
+import {
+  getActivationDialogConfig,
+  getDeactivationDialogConfig,
+} from '../utils/clientStatusActions';
 
+/**
+ * Props for ClientList component
+ */
 interface ClientListProps {
+  /** Optional callback when a client is selected */
   onSelectClient?: (clientId: string) => void;
 }
 
 /**
  * Optimized client list component with search and filtering capabilities
  * 
- * @param onSelectClient - Optional callback when a client is selected
+ * Features:
+ * - Search by name, document, phone, or address
+ * - Filter by active/inactive status
+ * - Activate/deactivate clients with confirmation
+ * - Responsive design (table for desktop, cards for mobile)
+ * 
+ * @param props - ClientList component props
+ * @returns JSX element
  */
-export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
+export const ClientList = memo(({ onSelectClient }: ClientListProps): JSX.Element => {
+  // State management
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState<boolean>(false);
+  const [clientToActivate, setClientToActivate] = useState<Client | null>(null);
+
+  // Hooks
   const { showToast } = useToast();
   const { isDesktop } = useMediaQuery();
-
   const { data: clients = [], isLoading: loading, isError, isRefetching, refetch } = useClients();
-  const deleteClientMutation = useDeleteClient();
+  const { handleActivate, handleDeactivate, isToggling } = useClientStatusToggle();
 
   const handleSearch = useCallback(() => {
     setSearchTerm(searchTerm);
@@ -45,40 +70,73 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
     setIsModalOpen(true);
   }, []);
 
-  const handleDeleteClick = useCallback((client: Client) => {
+  /**
+   * Handle click to delete (deactivate) a client
+   */
+  const handleDeleteClick = useCallback((client: Client): void => {
     setClientToDelete(client);
     setIsDeleteModalOpen(true);
   }, []);
 
-  const handleDeleteConfirm = useCallback(async () => {
+  /**
+   * Handle click to activate a client
+   */
+  const handleActivateClick = useCallback((client: Client): void => {
+    setClientToActivate(client);
+    setIsActivateModalOpen(true);
+  }, []);
+
+  /**
+   * Handle confirmation to deactivate a client
+   */
+  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
     if (!clientToDelete) return;
 
     try {
-      await deleteClientMutation.mutateAsync(clientToDelete.id);
-      showToast({
-        type: 'success',
-        title: 'Éxito',
-        message: `${clientHelpers.formatFullName(clientToDelete)} ha sido inactivado correctamente`,
-      });
+      await handleDeactivate(clientToDelete);
       setIsDeleteModalOpen(false);
       setClientToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al inactivar cliente';
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: errorMessage,
-      });
-      logger.error('Error deleting client:', error);
+      // Error handling is done by useClientStatusToggle hook
+      logger.error('Error in delete confirmation:', error);
     }
-  }, [clientToDelete, deleteClientMutation, showToast]);
+  }, [clientToDelete, handleDeactivate]);
 
-  const handleDeleteModalClose = useCallback(() => {
-    if (!deleteClientMutation.isPending) {
+  /**
+   * Handle confirmation to activate a client
+   */
+  const handleActivateConfirm = useCallback(async (): Promise<void> => {
+    if (!clientToActivate) return;
+
+    try {
+      await handleActivate(clientToActivate);
+      setIsActivateModalOpen(false);
+      setClientToActivate(null);
+    } catch (error) {
+      // Error handling is done by useClientStatusToggle hook
+      logger.error('Error in activate confirmation:', error);
+    }
+  }, [clientToActivate, handleActivate]);
+
+  /**
+   * Handle closing delete modal
+   */
+  const handleDeleteModalClose = useCallback((): void => {
+    if (!isToggling) {
       setIsDeleteModalOpen(false);
       setClientToDelete(null);
     }
-  }, [deleteClientMutation.isPending]);
+  }, [isToggling]);
+
+  /**
+   * Handle closing activate modal
+   */
+  const handleActivateModalClose = useCallback((): void => {
+    if (!isToggling) {
+      setIsActivateModalOpen(false);
+      setClientToActivate(null);
+    }
+  }, [isToggling]);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -407,16 +465,27 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
                               aria-label="Editar cliente"
                               className="!text-gray-400 hover:!text-powergym-blue-medium hover:!bg-blue-50/50"
                             />
-                            {client.is_active && (
+                            {client.is_active ? (
                               <IconButton
                                 icon={Trash2}
                                 onClick={() => handleDeleteClick(client)}
                                 variant="default"
                                 size="sm"
-                                disabled={deleteClientMutation.isPending}
+                                disabled={isToggling}
                                 title="Inactivar cliente"
                                 aria-label="Inactivar cliente"
                                 className="!text-gray-400 hover:!text-powergym-red hover:!bg-red-50/50"
+                              />
+                            ) : (
+                              <IconButton
+                                icon={CheckCircle}
+                                onClick={() => handleActivateClick(client)}
+                                variant="default"
+                                size="sm"
+                                disabled={isToggling}
+                                title="Activar cliente"
+                                aria-label="Activar cliente"
+                                className="!text-gray-400 hover:!text-green-600 hover:!bg-green-50/50"
                               />
                             )}
                           </div>
@@ -436,7 +505,8 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
             onView={onSelectClient}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
-            isDeleting={deleteClientMutation.isPending}
+            onActivate={handleActivateClick}
+            isDeleting={isToggling}
           />
         )}
         </div>
@@ -448,20 +518,42 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
           onSaved={handleClientSaved}
         />
 
-        {/* Confirm Delete Modal */}
-        {clientToDelete && (
-          <ConfirmDialog
-            isOpen={isDeleteModalOpen}
-            onClose={handleDeleteModalClose}
-            onConfirm={handleDeleteConfirm}
-            title="Inactivar Cliente"
-            message={`¿Está seguro de que desea inactivar al cliente ${clientHelpers.formatFullName(clientToDelete)}?`}
-            confirmText="Inactivar Cliente"
-            cancelText="Cancelar"
-            variant="danger"
-            isLoading={deleteClientMutation.isPending}
-          />
-        )}
+        {/* Confirm Deactivate Modal */}
+        {clientToDelete && (() => {
+          const dialogConfig = getDeactivationDialogConfig(clientToDelete);
+          return (
+            <ConfirmDialog
+              isOpen={isDeleteModalOpen}
+              onClose={handleDeleteModalClose}
+              onConfirm={handleDeleteConfirm}
+              title={dialogConfig.title}
+              message={dialogConfig.message}
+              confirmText={dialogConfig.confirmText}
+              cancelText={dialogConfig.cancelText}
+              variant={dialogConfig.variant}
+              isLoading={isToggling}
+              warningMessage="Esta acción no se puede deshacer. El cliente será marcado como inactivo y no aparecerá en la lista de clientes activos."
+            />
+          );
+        })()}
+
+        {/* Confirm Activate Modal */}
+        {clientToActivate && (() => {
+          const dialogConfig = getActivationDialogConfig(clientToActivate);
+          return (
+            <ConfirmDialog
+              isOpen={isActivateModalOpen}
+              onClose={handleActivateModalClose}
+              onConfirm={handleActivateConfirm}
+              title={dialogConfig.title}
+              message={dialogConfig.message}
+              confirmText={dialogConfig.confirmText}
+              cancelText={dialogConfig.cancelText}
+              variant={dialogConfig.variant}
+              isLoading={isToggling}
+            />
+          );
+        })()}
         </div>
       </div>
     </PageLayout>

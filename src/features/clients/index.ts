@@ -25,6 +25,8 @@ export {
   useRegisterFaceBiometric,
   useUpdateFaceBiometric,
 } from './hooks/useClients';
+export { useClientStatusToggle } from './hooks/useClientStatusToggle';
+export type { UseClientStatusToggleReturn } from './hooks/useClientStatusToggle';
 
 // Utils
 export { clientHelpers } from './utils/clientHelpers';
@@ -32,6 +34,15 @@ export { formatPhoneNumber, unformatPhoneNumber } from './utils/phoneFormatter';
 export { extractCountryCode, removeCountryCode } from './utils/phoneParser';
 export { mapClientToApi, mapClientFromApi } from './utils/clientMapper';
 export type { ClientApiPayload } from './utils/clientMapper';
+export {
+  getActivationDialogConfig,
+  getDeactivationDialogConfig,
+  getActivationSuccessMessage,
+  getDeactivationSuccessMessage,
+  ACTIVATION_MESSAGES,
+  DEACTIVATION_MESSAGES,
+} from './utils/clientStatusActions';
+export type { ClientStatusDialogConfig } from './utils/clientStatusActions';
 
 // Constants
 export * from './constants/clientConstants';

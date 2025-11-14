@@ -1,34 +1,56 @@
+// External dependencies
 import { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Calendar, CreditCard, Activity } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Internal shared components
 import { RefreshButton } from '../components/ui/RefreshButton';
 import { Button } from '../components/ui/Button';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { useToast } from '../shared';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
+import { useToast, logger } from '../shared';
+
+// Feature components
 import { ClientFormModal } from '../features/clients/components/ClientFormModal';
 import { BiometricCaptureModal } from '../features/clients/components/BiometricCaptureModal';
-import { useClient, useClientDashboard, clientHelpers, clientKeys } from '../features/clients';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { ClientInfoTab } from '../features/clients/components/ClientInfoTab';
 import { SubscriptionsTab } from '../features/clients';
 import { AttendanceTab } from '../features/clients';
+import { useClient, useClientDashboard, clientHelpers, clientKeys } from '../features/clients';
+import { useClientStatusToggle } from '../features/clients/hooks/useClientStatusToggle';
+import { getActivationDialogConfig } from '../features/clients/utils/clientStatusActions';
 import { useActivePlans } from '../features/plans';
 import { Plan, subscriptionKeys } from '../features/subscriptions/api/types';
 import { attendanceKeys } from '../features/attendances';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ClientDetailProps {
   clientId: string;
   onBack: () => void;
 }
 
-export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+/**
+ * ClientDetailOptimized - Client detail page component
+ * 
+ * Displays comprehensive client information with tabs for info, subscriptions, and attendance.
+ * Supports editing, biometric management, and client activation/deactivation.
+ * 
+ * @param props - ClientDetailOptimized component props
+ * @returns JSX element
+ */
+export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps): JSX.Element {
+  // State management
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isBiometricModalOpen, setIsBiometricModalOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('info');
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState<boolean>(false);
+
+  // Hooks
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { handleActivate, isToggling } = useClientStatusToggle();
 
   const { data: client, isLoading: clientLoading, isRefetching: isClientRefetching, refetch: refetchClient } = useClient(clientId);
   const { data: dashboard, isLoading: dashboardLoading, isError, isRefetching: isDashboardRefetching, refetch: refetchDashboard } = useClientDashboard(clientId);
@@ -163,7 +185,7 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
     });
   };
 
-  const handleBiometricSuccess = () => {
+  const handleBiometricSuccess = (): void => {
     setIsBiometricModalOpen(false);
     showToast({
       type: 'success',
@@ -171,6 +193,37 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
       message: 'Biometría actualizada exitosamente'
     });
   };
+
+  /**
+   * Handle click to activate client
+   */
+  const handleActivateClick = useCallback((): void => {
+    setIsActivateModalOpen(true);
+  }, []);
+
+  /**
+   * Handle confirmation to activate client
+   */
+  const handleActivateConfirm = useCallback(async (): Promise<void> => {
+    if (!client) return;
+
+    try {
+      await handleActivate(client);
+      setIsActivateModalOpen(false);
+    } catch (error) {
+      // Error handling is done by useClientStatusToggle hook
+      logger.error('Error in activate confirmation:', error);
+    }
+  }, [client, handleActivate]);
+
+  /**
+   * Handle closing activate modal
+   */
+  const handleActivateModalClose = useCallback((): void => {
+    if (!isToggling) {
+      setIsActivateModalOpen(false);
+    }
+  }, [isToggling]);
 
   const handleWhatsApp = () => {
     if (client?.phone) {
@@ -304,6 +357,7 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
                     onWhatsApp={handleWhatsApp}
                     onEdit={() => setIsEditModalOpen(true)}
                     onBiometric={() => setIsBiometricModalOpen(true)}
+                    onActivate={!client.is_active ? handleActivateClick : undefined}
                   />
                 </motion.div>
               </TabsContent>
@@ -372,6 +426,24 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
             } : undefined}
           />
         )}
+
+        {/* Confirm Activate Modal */}
+        {client && !client.is_active && (() => {
+          const dialogConfig = getActivationDialogConfig(client);
+          return (
+            <ConfirmDialog
+              isOpen={isActivateModalOpen}
+              onClose={handleActivateModalClose}
+              onConfirm={handleActivateConfirm}
+              title={dialogConfig.title}
+              message={dialogConfig.message}
+              confirmText={dialogConfig.confirmText}
+              cancelText={dialogConfig.cancelText}
+              variant={dialogConfig.variant}
+              isLoading={isToggling}
+            />
+          );
+        })()}
       </AnimatePresence>
     </PageLayout>
   );
