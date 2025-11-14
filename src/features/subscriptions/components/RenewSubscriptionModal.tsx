@@ -15,10 +15,10 @@ import {
   useApplyReward,
   useRewardsBySubscription,
   filterAvailableRewards,
-  REWARD_RULES,
   type Reward,
   type RewardEligibilityResponse,
 } from '../../../features/rewards';
+import { useRewardConfig, getRewardConfigData } from '../../../features/rewards/hooks/useRewardConfig';
 import { CalculateRewardButton } from './CalculateRewardButton';
 
 interface RenewSubscriptionModalProps {
@@ -40,6 +40,8 @@ const RewardCalculationStatus: React.FC<{
 }> = ({ subscriptionId, onCalculationSuccess }) => {
   const { data: rewards, isLoading, error, refetch } = useRewardsBySubscription(subscriptionId);
   const [lastCalculationResult, setLastCalculationResult] = useState<RewardEligibilityResponse | null>(null);
+  const rewardConfigQuery = useRewardConfig();
+  const config = getRewardConfigData(rewardConfigQuery);
 
   const rewardStatus = useMemo(() => {
     if (isLoading) return { type: 'loading' as const };
@@ -154,8 +156,8 @@ const RewardCalculationStatus: React.FC<{
 
   if (rewardStatus.type === 'not-eligible') {
     const { attendanceCount } = rewardStatus;
-    const remaining = REWARD_RULES.ATTENDANCE_THRESHOLD - attendanceCount;
-    const progress = Math.min((attendanceCount / REWARD_RULES.ATTENDANCE_THRESHOLD) * 100, 100);
+    const remaining = config.attendance_threshold - attendanceCount;
+    const progress = Math.min((attendanceCount / config.attendance_threshold) * 100, 100);
 
     return (
       <div className="space-y-3">
@@ -178,7 +180,7 @@ const RewardCalculationStatus: React.FC<{
           <div className="mb-3">
             <div className="flex justify-between text-xs text-amber-700 mb-1">
               <span>Progreso hacia recompensa</span>
-              <span className="font-semibold">{attendanceCount}/{REWARD_RULES.ATTENDANCE_THRESHOLD}</span>
+              <span className="font-semibold">{attendanceCount}/{config.attendance_threshold}</span>
             </div>
             <div className="w-full bg-amber-200 rounded-full h-2">
               <div 
@@ -194,8 +196,8 @@ const RewardCalculationStatus: React.FC<{
             <div className="flex-1">
               <p className="text-xs text-amber-800">
                 {remaining > 0 
-                  ? `Se requieren ${REWARD_RULES.ATTENDANCE_THRESHOLD} asistencias para obtener un ${REWARD_RULES.DISCOUNT_PERCENTAGE}% de descuento. Faltan ${remaining} ${remaining === 1 ? 'asistencia' : 'asistencias'}.`
-                  : `Se requieren ${REWARD_RULES.ATTENDANCE_THRESHOLD} asistencias para obtener un ${REWARD_RULES.DISCOUNT_PERCENTAGE}% de descuento.`
+                  ? `Se requieren ${config.attendance_threshold} asistencias para obtener un ${config.discount_percentage}% de descuento. Faltan ${remaining} ${remaining === 1 ? 'asistencia' : 'asistencias'}.`
+                  : `Se requieren ${config.attendance_threshold} asistencias para obtener un ${config.discount_percentage}% de descuento.`
                 }
               </p>
             </div>
@@ -215,7 +217,7 @@ const RewardCalculationStatus: React.FC<{
         <div className="flex-1">
           <p className="text-sm font-semibold text-gray-900">Recompensa no calculada</p>
           <p className="text-xs text-gray-600 mt-1">
-            Calcula si esta suscripción es elegible para obtener una recompensa de {REWARD_RULES.DISCOUNT_PERCENTAGE}% de descuento
+            Calcula si esta suscripción es elegible para obtener una recompensa de {config.discount_percentage}% de descuento
           </p>
         </div>
       </div>

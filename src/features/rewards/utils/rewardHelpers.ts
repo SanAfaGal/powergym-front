@@ -1,7 +1,9 @@
-import { Reward, RewardStatus } from '../types';
-import { REWARD_RULES, ELIGIBLE_PLAN_UNITS } from '../constants/rewardConstants';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+import { RewardConfig } from '../api/rewardsApi';
+import { ELIGIBLE_PLAN_UNITS, REWARD_RULES } from '../constants/rewardConstants';
+import { Reward, RewardStatus } from '../types';
 
 interface SubscriptionInfo {
   start_date: string;
@@ -180,10 +182,18 @@ export function filterAvailableRewards(rewards: Reward[]): Reward[] {
 }
 
 /**
- * Checks if a plan is eligible for rewards (monthly plans only)
+ * Checks if a plan is eligible for rewards.
+ * 
+ * @param planDurationUnit - Plan duration unit to check (e.g., 'month', 'week')
+ * @param config - Optional reward configuration. If not provided, uses default constants.
+ * @returns True if the plan unit is eligible for rewards
  */
-export function isPlanEligibleForRewards(planDurationUnit: string): boolean {
-  return (ELIGIBLE_PLAN_UNITS as readonly string[]).includes(planDurationUnit);
+export function isPlanEligibleForRewards(
+  planDurationUnit: string,
+  config?: Pick<RewardConfig, 'eligible_plan_units'>
+): boolean {
+  const eligibleUnits = config?.eligible_plan_units ?? ELIGIBLE_PLAN_UNITS;
+  return (eligibleUnits as readonly string[]).includes(planDurationUnit);
 }
 
 /**
@@ -225,29 +235,33 @@ export function getSubscriptionPrice(
 }
 
 /**
- * Checks if a reward can be calculated for renewal (subscription active but has 20+ attendances)
+ * Checks if a reward can be calculated for renewal (subscription active but has enough attendances)
  * This allows calculating rewards even if the subscription hasn't ended yet
  * 
  * @param subscription - Subscription information
  * @param attendanceCount - Number of attendances in the current cycle
+ * @param config - Optional reward configuration. If not provided, uses default constants.
  * @returns True if can calculate reward for renewal
  */
 export function canCalculateRewardForRenewal(
   subscription: SubscriptionInfo | null | undefined,
-  attendanceCount: number
+  attendanceCount: number,
+  config?: Pick<RewardConfig, 'attendance_threshold' | 'eligible_plan_units'>
 ): boolean {
   if (!subscription) return false;
   
+  const threshold = config?.attendance_threshold ?? REWARD_RULES.ATTENDANCE_THRESHOLD;
+  
   // Check if plan is eligible for rewards
   const isEligiblePlan = subscription.plan?.duration_unit 
-    ? isPlanEligibleForRewards(subscription.plan.duration_unit)
+    ? isPlanEligibleForRewards(subscription.plan.duration_unit, config)
     : false;
   
   // Can calculate if:
-  // 1. Plan is monthly (eligible)
-  // 2. Has 20+ attendances in current cycle
+  // 1. Plan is eligible for rewards
+  // 2. Has enough attendances in current cycle (meets threshold)
   // 3. Subscription is active (not necessarily ended)
-  return isEligiblePlan && attendanceCount >= REWARD_RULES.ATTENDANCE_THRESHOLD;
+  return isEligiblePlan && attendanceCount >= threshold;
 }
 
 /**

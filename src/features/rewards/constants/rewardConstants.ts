@@ -18,7 +18,18 @@ export const RETRY_CONFIG = {
   retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
 } as const;
 
-// Reward Business Rules
+/**
+ * Reward Business Rules
+ * 
+ * @deprecated Use `useRewardConfig()` hook to get configuration from the backend API.
+ * These constants are kept as fallback defaults and for backward compatibility.
+ * 
+ * Migration: Replace `REWARD_RULES` usage with `useRewardConfig()` hook:
+ * ```tsx
+ * const { data: config } = useRewardConfig();
+ * const threshold = config.attendance_threshold;
+ * ```
+ */
 export const REWARD_RULES = {
   ATTENDANCE_THRESHOLD: 20, // Minimum attendances to qualify
   DISCOUNT_PERCENTAGE: 20, // Default discount percentage
@@ -28,7 +39,18 @@ export const REWARD_RULES = {
   EXPIRING_SOON_THRESHOLD: 3, // Days before expiration to consider "expiring soon"
 } as const;
 
-// Plan Eligibility
+/**
+ * Plan Eligibility
+ * 
+ * @deprecated Use `useRewardConfig()` hook to get eligible plan units from the backend API.
+ * This constant is kept as fallback default and for backward compatibility.
+ * 
+ * Migration: Replace `ELIGIBLE_PLAN_UNITS` usage with `useRewardConfig()` hook:
+ * ```tsx
+ * const { data: config } = useRewardConfig();
+ * const eligibleUnits = config.eligible_plan_units;
+ * ```
+ */
 export const ELIGIBLE_PLAN_UNITS = ['month'] as const;
 
 // Reward Status Labels

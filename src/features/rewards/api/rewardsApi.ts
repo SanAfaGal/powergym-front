@@ -6,6 +6,16 @@ import {
 } from '../types';
 
 /**
+ * Reward configuration interface
+ */
+export interface RewardConfig {
+  attendance_threshold: number;
+  discount_percentage: number;
+  expiration_days: number;
+  eligible_plan_units: string[];
+}
+
+/**
  * API endpoints for rewards feature
  */
 const REWARDS_ENDPOINTS = {
@@ -13,6 +23,7 @@ const REWARDS_ENDPOINTS = {
   getAvailableRewards: (clientId: string) => `/clients/${clientId}/rewards/available`,
   getRewardsBySubscription: (subscriptionId: string) => `/subscriptions/${subscriptionId}/rewards`,
   applyReward: (rewardId: string) => `/rewards/${rewardId}/apply`,
+  getConfig: () => '/rewards/config',
 } as const;
 
 /**
@@ -52,6 +63,15 @@ export const rewardsApi = {
    */
   async applyReward(rewardId: string, data: RewardApplyInput): Promise<Reward> {
     return apiClient.post<Reward>(REWARDS_ENDPOINTS.applyReward(rewardId), data);
+  },
+
+  /**
+   * Get reward system configuration
+   * Returns the current reward configuration (threshold, discount, expiration, eligible plans)
+   * This endpoint is public and does not require authentication
+   */
+  async getRewardConfig(): Promise<RewardConfig> {
+    return apiClient.get<RewardConfig>(REWARDS_ENDPOINTS.getConfig());
   },
 };
 

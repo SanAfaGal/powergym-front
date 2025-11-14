@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { Gift } from 'lucide-react';
-import { Card } from '../../../../../components/ui/Card';
-import { Badge } from '../../../../../components/ui/Badge';
 import { motion } from 'framer-motion';
+
+import { Badge } from '../../../../../components/ui/Badge';
+import { Card } from '../../../../../components/ui/Card';
 import { calculateCycleAttendances, isPlanEligibleForRewards } from '../../../../rewards';
-import { REWARD_RULES } from '../../../../rewards/constants/rewardConstants';
+import { useRewardConfig, getRewardConfigData } from '../../../../rewards/hooks/useRewardConfig';
 
 interface RewardProgressProps {
   activeSubscription: {
@@ -28,14 +29,17 @@ export const RewardProgress = ({
   subscriptionPlan, 
   attendances 
 }: RewardProgressProps) => {
+  const rewardConfigQuery = useRewardConfig();
+  const config = getRewardConfigData(rewardConfigQuery);
+
   const progress = useMemo(() => {
     if (!activeSubscription || !subscriptionPlan || !attendances || attendances.length === 0) {
       return null;
     }
 
-    const isEligible = isPlanEligibleForRewards(subscriptionPlan.duration_unit);
+    const isEligible = isPlanEligibleForRewards(subscriptionPlan.duration_unit, config);
     if (!isEligible) {
-      return null; // Don't show progress for non-monthly plans
+      return null; // Don't show progress for non-eligible plans
     }
 
     const cycleAttendances = calculateCycleAttendances(
@@ -44,7 +48,7 @@ export const RewardProgress = ({
       activeSubscription.end_date
     );
 
-    const threshold = REWARD_RULES.ATTENDANCE_THRESHOLD;
+    const threshold = config.attendance_threshold;
     const progressPercentage = Math.min((cycleAttendances / threshold) * 100, 100);
     const remaining = Math.max(0, threshold - cycleAttendances);
     const isComplete = cycleAttendances >= threshold;
@@ -55,8 +59,9 @@ export const RewardProgress = ({
       progressPercentage,
       remaining,
       isComplete,
+      discountPercentage: config.discount_percentage,
     };
-  }, [activeSubscription, subscriptionPlan, attendances]);
+  }, [activeSubscription, subscriptionPlan, attendances, config]);
 
   if (!progress) return null;
 
@@ -68,7 +73,9 @@ export const RewardProgress = ({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">Progreso hacia Recompensa</p>
-          <p className="text-xs text-gray-600 truncate">20% de descuento con 20+ asistencias</p>
+          <p className="text-xs text-gray-600 truncate">
+            {progress.discountPercentage}% de descuento con {progress.threshold}+ asistencias
+          </p>
         </div>
         <Badge 
           variant={progress.isComplete ? 'success' : 'info'} 

@@ -1,11 +1,13 @@
-import { useCallback, useState } from 'react';
-import { Gift, Sparkles } from 'lucide-react';
+import { useCallback } from 'react';
+import { Sparkles } from 'lucide-react';
+
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { useCalculateRewardEligibility } from '../../../features/rewards';
-import { useToast } from '../../../shared';
-import { NOTIFICATION_MESSAGES, REWARD_RULES } from '../../../features/rewards/constants/rewardConstants';
+import { useRewardConfig, getRewardConfigData } from '../../../features/rewards/hooks/useRewardConfig';
+import { NOTIFICATION_MESSAGES } from '../../../features/rewards/constants/rewardConstants';
 import { RewardEligibilityResponse } from '../../../features/rewards/types';
+import { useToast } from '../../../shared';
 
 interface CalculateRewardButtonProps {
   subscriptionId: string;
@@ -31,6 +33,8 @@ export const CalculateRewardButton: React.FC<CalculateRewardButtonProps> = ({
 }) => {
   const { showToast } = useToast();
   const calculateEligibilityMutation = useCalculateRewardEligibility();
+  const rewardConfigQuery = useRewardConfig();
+  const config = getRewardConfigData(rewardConfigQuery);
 
   const handleCalculate = useCallback(async () => {
     if (!subscriptionId) return;
@@ -44,16 +48,16 @@ export const CalculateRewardButton: React.FC<CalculateRewardButtonProps> = ({
       if (result.eligible) {
         showToast({
           title: '¡Recompensa Obtenida!',
-          message: `Has ganado un ${REWARD_RULES.DISCOUNT_PERCENTAGE}% de descuento. La recompensa está disponible para aplicar.`,
+          message: `Has ganado un ${config.discount_percentage}% de descuento. La recompensa está disponible para aplicar.`,
           type: 'success',
         });
         onSuccess?.();
       } else {
         // Not eligible - show informative message
-        const remaining = REWARD_RULES.ATTENDANCE_THRESHOLD - result.attendance_count;
+        const remaining = config.attendance_threshold - result.attendance_count;
         const message = remaining > 0
-          ? `El cliente tiene ${result.attendance_count} ${result.attendance_count === 1 ? 'asistencia' : 'asistencias'} en este ciclo. Se requieren ${REWARD_RULES.ATTENDANCE_THRESHOLD} para obtener la recompensa. Faltan ${remaining} ${remaining === 1 ? 'asistencia' : 'asistencias'}.`
-          : `El cliente tiene ${result.attendance_count} ${result.attendance_count === 1 ? 'asistencia' : 'asistencias'} en este ciclo. Se requieren ${REWARD_RULES.ATTENDANCE_THRESHOLD} para obtener la recompensa.`;
+          ? `El cliente tiene ${result.attendance_count} ${result.attendance_count === 1 ? 'asistencia' : 'asistencias'} en este ciclo. Se requieren ${config.attendance_threshold} para obtener la recompensa. Faltan ${remaining} ${remaining === 1 ? 'asistencia' : 'asistencias'}.`
+          : `El cliente tiene ${result.attendance_count} ${result.attendance_count === 1 ? 'asistencia' : 'asistencias'} en este ciclo. Se requieren ${config.attendance_threshold} para obtener la recompensa.`;
         
         showToast({
           title: 'No Elegible para Recompensa',
@@ -71,7 +75,7 @@ export const CalculateRewardButton: React.FC<CalculateRewardButtonProps> = ({
         type: 'error',
       });
     }
-  }, [subscriptionId, calculateEligibilityMutation, showToast, onSuccess, onCalculationResult]);
+  }, [subscriptionId, calculateEligibilityMutation, showToast, onSuccess, onCalculationResult, config]);
 
   return (
     <Button
