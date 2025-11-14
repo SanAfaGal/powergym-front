@@ -86,8 +86,9 @@ export const PrivacyPolicy = () => {
                 <li><strong>Información de contacto:</strong> Dirección de correo electrónico, número de teléfono (incluyendo número de WhatsApp para notificaciones)</li>
                 <li><strong>Información de membresía:</strong> Tipo de plan o suscripción seleccionada, fecha de inicio de la membresía, estado de la suscripción, fecha de vencimiento</li>
                 <li><strong>Información de pago:</strong> Historial de pagos de membresías, métodos de pago utilizados, registros de transacciones (cuando corresponda)</li>
-                <li><strong>Información de asistencia:</strong> Registro de check-ins, uso de las instalaciones, frecuencia de asistencia</li>
-                <li><strong>Información biométrica (opcional):</strong> En caso de que utilice nuestro sistema de reconocimiento facial para acceso al gimnasio, podemos almacenar datos biométricos para facilitar su identificación</li>
+                <li><strong>Información de asistencia:</strong> Registro de check-ins, uso de las instalaciones, frecuencia de asistencia, historial de asistencias utilizado para calcular elegibilidad de recompensas</li>
+                <li><strong>Información biométrica (opcional):</strong> En caso de que utilice nuestro sistema de reconocimiento facial para acceso al gimnasio, almacenamos datos biométricos de forma segura. Específicamente, almacenamos embeddings faciales (vectores numéricos de 512 dimensiones que representan características faciales únicas) y miniaturas encriptadas de su rostro. No almacenamos imágenes completas de su rostro, solo representaciones matemáticas que permiten la identificación segura.</li>
+                <li><strong>Información de transacciones:</strong> Si realiza compras de productos en nuestro gimnasio, registramos información sobre las transacciones, productos adquiridos y empleado responsable de la venta (para efectos de gestión de inventario y contabilidad)</li>
                 <li><strong>Información de emergencia:</strong> Contacto de emergencia y relación (cuando la proporcione)</li>
               </ul>
               
@@ -129,12 +130,61 @@ export const PrivacyPolicy = () => {
                   <strong>Balizas web, etiquetas y píxeles:</strong> Archivos electrónicos utilizados 
                   para registrar información sobre cómo navega usted por el Sitio.
                 </li>
+                <li>
+                  <strong>Tecnología de reconocimiento facial (InsightFace):</strong> Utilizamos el modelo 
+                  InsightFace para procesar imágenes faciales y generar embeddings faciales (representaciones 
+                  matemáticas de características faciales). Esta tecnología se utiliza únicamente para 
+                  identificar miembros durante el check-in y control de acceso.
+                </li>
+                <li>
+                  <strong>Almacenamiento vectorial (pgvector):</strong> Utilizamos bases de datos vectoriales 
+                  para almacenar y buscar embeddings faciales de forma eficiente y segura, permitiendo la 
+                  identificación rápida mediante comparación de similitud matemática.
+                </li>
               </ul>
 
               <p className="text-neutral-700 leading-relaxed mt-4">
                 Cuando hablamos de &quot;Información personal&quot; en la presente Política de privacidad, 
                 nos referimos tanto a la Información del dispositivo como a la Información del miembro.
               </p>
+
+              <h3 className="text-xl font-semibold text-powergym-charcoal mt-6 mb-3">
+                Almacenamiento de datos biométricos
+              </h3>
+              <div className="bg-neutral-50 rounded-2xl p-6 border border-neutral-200 mt-4">
+                <p className="text-neutral-700 leading-relaxed mb-3">
+                  <strong>Seguridad y privacidad de sus datos biométricos:</strong>
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-neutral-700">
+                  <li>
+                    <strong>No almacenamos imágenes completas:</strong> No guardamos fotografías completas de su 
+                    rostro. En su lugar, utilizamos tecnología de reconocimiento facial (InsightFace) para generar 
+                    embeddings faciales, que son representaciones matemáticas numéricas (vectores de 512 dimensiones) 
+                    que codifican características faciales únicas. Estos embeddings no pueden ser utilizados para 
+                    reconstruir su imagen original.
+                  </li>
+                  <li>
+                    <strong>Miniaturas encriptadas:</strong> Almacenamos únicamente miniaturas encriptadas de su 
+                    rostro, que se utilizan para referencia visual limitada y están protegidas mediante encriptación.
+                  </li>
+                  <li>
+                    <strong>Almacenamiento seguro:</strong> Los embeddings faciales se almacenan en una base de datos 
+                    vectorial (pgvector) con medidas de seguridad implementadas. Solo personal autorizado tiene acceso 
+                    a estos datos, y únicamente para los fines de identificación y control de acceso.
+                  </li>
+                  <li>
+                    <strong>Uso limitado:</strong> Sus datos biométricos se utilizan exclusivamente para identificarle 
+                    durante el check-in y controlar el acceso a las instalaciones del gimnasio. No se utilizan para 
+                    ningún otro propósito.
+                  </li>
+                  <li>
+                    <strong>Derecho a eliminar:</strong> Puede solicitar la eliminación de sus datos biométricos en 
+                    cualquier momento contactándonos a través de los medios indicados en esta política. Sin embargo, 
+                    tenga en cuenta que esto puede afectar su capacidad de utilizar el sistema de reconocimiento facial 
+                    para check-in.
+                  </li>
+                </ul>
+              </div>
             </section>
 
             {/* Cómo utilizamos la información */}
@@ -153,13 +203,33 @@ export const PrivacyPolicy = () => {
                   renovaciones y cancelaciones, y gestionar el acceso a nuestras instalaciones del gimnasio.
                 </li>
                 <li>
-                  <strong>Control de acceso:</strong> Verificar su identidad al ingresar al gimnasio, 
-                  registrar asistencias mediante check-in (incluyendo reconocimiento facial si lo utiliza), 
-                  y controlar el uso de las instalaciones y equipamiento.
+                  <strong>Control de acceso y reconocimiento facial:</strong> Verificar su identidad al ingresar 
+                  al gimnasio mediante reconocimiento facial utilizando embeddings faciales almacenados. El sistema 
+                  compara su rostro capturado en tiempo real con los embeddings almacenados para identificarle de 
+                  forma segura y rápida, registrar su asistencia automáticamente y controlar el acceso basado en 
+                  el estado de su suscripción.
                 </li>
                 <li>
                   <strong>Gestión de pagos:</strong> Procesar pagos de membresías, generar facturas, 
                   mantener registros financieros y contables, y gestionar renovaciones de suscripciones.
+                </li>
+                <li>
+                  <strong>Sistema de recompensas basado en asistencia:</strong> Calcular automáticamente su 
+                  elegibilidad para recompensas basadas en su frecuencia de asistencia. Si cumple con el umbral 
+                  mínimo de asistencias (20 o más asistencias en un ciclo de suscripción mensual), el sistema 
+                  genera automáticamente una recompensa que puede aplicar como descuento en su próxima suscripción. 
+                  Utilizamos su historial de asistencias únicamente para este propósito.
+                </li>
+                <li>
+                  <strong>Gestión de inventario y ventas:</strong> Registrar transacciones de productos cuando 
+                  realiza compras en nuestro gimnasio, gestionar el inventario de productos, y mantener registros 
+                  de ventas para efectos contables y de gestión operativa.
+                </li>
+                <li>
+                  <strong>Estadísticas y análisis:</strong> Generar reportes y estadísticas sobre asistencia 
+                  (por hora, día, semana), patrones de uso de las instalaciones, métricas de membresías, ingresos, 
+                  y otros indicadores de gestión del gimnasio. Esta información se utiliza para mejorar nuestros 
+                  servicios y tomar decisiones operativas.
                 </li>
                 <li>
                   <strong>Comunicación y notificaciones:</strong> Comunicarnos con usted sobre su cuenta, 
@@ -266,11 +336,24 @@ export const PrivacyPolicy = () => {
                 y durante un período razonable después de la finalización de la membresía para cumplir 
                 con obligaciones legales, contables y fiscales según la ley colombiana.
               </p>
+              <p className="text-neutral-700 leading-relaxed mb-4">
+                <strong>Datos de asistencia y recompensas:</strong> Conservamos su historial de asistencias 
+                para calcular su elegibilidad para recompensas basadas en asistencia y para generar estadísticas 
+                y análisis de uso de las instalaciones. Estos datos se mantienen mientras sea necesario para 
+                estos fines y para cumplir con obligaciones contables.
+              </p>
+              <p className="text-neutral-700 leading-relaxed mb-4">
+                <strong>Datos biométricos:</strong> Sus embeddings faciales y miniaturas encriptadas se 
+                conservan mientras tenga una membresía activa y utilice el sistema de reconocimiento facial. 
+                Puede solicitar la eliminación de estos datos en cualquier momento, lo que puede afectar su 
+                capacidad de utilizar el sistema de check-in facial.
+              </p>
               <p className="text-neutral-700 leading-relaxed">
                 Si solicita la eliminación de sus datos, eliminaremos o anonimizaremos su información 
                 personal, excepto cuando estemos obligados legalmente a conservarla (por ejemplo, 
                 registros contables para efectos fiscales, obligaciones legales, o para resolver disputas 
-                pendientes).
+                pendientes). Los datos anonimizados pueden conservarse para análisis estadísticos agregados 
+                que no permiten la identificación individual.
               </p>
             </section>
 
