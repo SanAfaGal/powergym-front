@@ -136,6 +136,7 @@ export const ClientForm = memo(({
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<FormInternalData>({
     defaultValues: initialFormValues,
@@ -199,16 +200,43 @@ export const ClientForm = memo(({
       }
       onSuccess();
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (clientId ? NOTIFICATION_MESSAGES.updateError : NOTIFICATION_MESSAGES.createError);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: errorMessage,
-      });
+      // Check if error is related to duplicate DNI/cedula
+      const isConflictError = error && typeof error === 'object' && 'status' in error && error.status === 409;
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isDniDuplicateError = isConflictError || 
+        (errorMessage && (
+          errorMessage.toLowerCase().includes('dni') || 
+          errorMessage.toLowerCase().includes('already exists') ||
+          errorMessage.toLowerCase().includes('ya existe') ||
+          errorMessage.toLowerCase().includes('ya está registrado')
+        ));
+
+      if (isDniDuplicateError) {
+        // Set error on document_number field
+        setError('document_number', {
+          type: 'manual',
+          message: 'Este número de cédula ya está registrado. No se puede crear otro cliente con la misma cédula.',
+        });
+
+        // Show toast with specific message
+        showToast({
+          type: 'error',
+          title: 'Error de validación',
+          message: NOTIFICATION_MESSAGES.documentExists,
+        });
+      } else {
+        // Handle other errors
+        const genericErrorMessage = error instanceof Error 
+          ? error.message 
+          : (clientId ? NOTIFICATION_MESSAGES.updateError : NOTIFICATION_MESSAGES.createError);
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: genericErrorMessage,
+        });
+      }
     }
-  }, [formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess]);
+  }, [formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess, setError]);
 
   // Memoized validation states
   const isDocumentValid = useMemo(() => 
