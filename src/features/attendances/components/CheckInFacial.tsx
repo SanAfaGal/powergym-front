@@ -5,8 +5,9 @@ import { CheckInProcessingStatus } from './CheckInProcessingStatus';
 import { useCheckIn } from '../hooks/useAttendances';
 import { CheckInResponse } from '../types';
 import { logger } from '../../../shared';
-import { Camera } from 'lucide-react';
+import { Camera, AlertCircle } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
+import { IS_FACE_RECOGNITION_ENABLED, NOTIFICATION_MESSAGES } from '../constants/attendanceConstants';
 
 type ProcessingStage = 'idle' | 'uploading' | 'processing' | 'verifying' | 'finalizing' | 'completed';
 
@@ -17,51 +18,69 @@ export const CheckInFacial: React.FC = () => {
 
   const { checkIn, reset } = useCheckIn();
 
+  if (!IS_FACE_RECOGNITION_ENABLED) {
+    return (
+      <Card className="p-8 sm:p-12 text-center bg-white border border-gray-100 shadow-soft max-w-2xl mx-auto" padding="none">
+        <div className="flex flex-col items-center space-y-5 sm:space-y-6">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-full flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Reconocimiento Facial Deshabilitado</h3>
+            <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto font-medium">
+              {NOTIFICATION_MESSAGES.featureDisabled}
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   const handleImageCaptured = async (base64Image: string) => {
     setProcessingStage('uploading');
     setCheckInResult(null);
-    
+
     try {
       // Stage 1: Uploading (simulated delay for better UX)
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       // Stage 2: Processing facial recognition
       setProcessingStage('processing');
       await new Promise(resolve => setTimeout(resolve, 400));
-      
+
       // Stage 3: Verifying subscription
       setProcessingStage('verifying');
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       // Stage 4: Finalizing
       setProcessingStage('finalizing');
-      
+
       // Make actual API call
       const result = await checkIn(base64Image);
-      
+
       // Stage 5: Completed
       setProcessingStage('completed');
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       setCheckInResult(result);
     } catch (err: unknown) {
       logger.error('Check-in failed:', err);
-      
+
       let errorResult: CheckInResponse;
-      const error = err as { 
-        type?: string; 
-        status?: number; 
-        message?: string; 
-        response?: { 
-          data?: { 
+      const error = err as {
+        type?: string;
+        status?: number;
+        message?: string;
+        response?: {
+          data?: {
             detail?: string;
             message?: string;
           } | string;
-        } 
+        }
       };
       const errorType = error?.type;
       const status = error?.status;
-      
+
       if (errorType === 'network') {
         errorResult = {
           success: false,
@@ -81,7 +100,7 @@ export const CheckInFacial: React.FC = () => {
       } else if (status && status > 0) {
         let apiMessage = '';
         let apiDetail = '';
-        
+
         try {
           if (error.response?.data) {
             const errorData = error.response.data;
@@ -96,7 +115,7 @@ export const CheckInFacial: React.FC = () => {
         } catch (parseError) {
           logger.warn('Could not parse error response:', parseError);
         }
-        
+
         if (status === 400) {
           errorResult = {
             success: false,
@@ -163,7 +182,7 @@ export const CheckInFacial: React.FC = () => {
           detail: 'Ocurrió un error inesperado. Por favor intenta de nuevo o contacta al soporte técnico.',
         };
       }
-      
+
       setCheckInResult(errorResult);
       setProcessingStage('completed');
     } finally {
@@ -197,11 +216,11 @@ export const CheckInFacial: React.FC = () => {
   const showCamera = processingStage === 'idle' && !checkInResult;
   const showProcessing = processingStage !== 'idle' && processingStage !== 'completed' && !checkInResult;
   const showResult = checkInResult !== null;
-  
-  const processingStageForStatus = showProcessing 
+
+  const processingStageForStatus = showProcessing
     ? (processingStage === 'uploading' ? 'uploading' :
-       processingStage === 'processing' ? 'processing' :
-       processingStage === 'verifying' ? 'verifying' : 'finalizing')
+      processingStage === 'processing' ? 'processing' :
+        processingStage === 'verifying' ? 'verifying' : 'finalizing')
     : 'uploading';
 
   return (
@@ -221,7 +240,7 @@ export const CheckInFacial: React.FC = () => {
       {/* Processing Status - Show during processing */}
       {showProcessing && (
         <div className="w-full">
-          <CheckInProcessingStatus 
+          <CheckInProcessingStatus
             stage={processingStageForStatus}
           />
         </div>

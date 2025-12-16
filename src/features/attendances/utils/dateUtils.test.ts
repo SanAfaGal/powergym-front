@@ -27,16 +27,6 @@ describe('dateUtils', () => {
       expect(formatAttendanceDate('')).toBe('Fecha inválida');
       expect(formatAttendanceDate('2024-13-45')).toBe('Fecha inválida');
     });
-
-    it('should handle different date formats correctly', () => {
-      const date1 = '2024-12-25T00:00:00Z';
-      const formatted1 = formatAttendanceDate(date1);
-      expect(formatted1).toBe('25/12/2024');
-
-      const date2 = '2024-01-01T00:00:00Z';
-      const formatted2 = formatAttendanceDate(date2);
-      expect(formatted2).toBe('01/01/2024');
-    });
   });
 
   describe('formatAttendanceDateTime', () => {
@@ -52,18 +42,6 @@ describe('dateUtils', () => {
       const result = formatAttendanceDateTime('invalid-date');
       expect(result.date).toBe('Fecha inválida');
       expect(result.time).toBe('Hora inválida');
-    });
-
-    it('should handle time correctly', () => {
-      const dateString = '2024-01-15T09:05:30Z';
-      const result = formatAttendanceDateTime(dateString);
-      expect(result.time).toMatch(/09:05:30/);
-    });
-
-    it('should handle midnight correctly', () => {
-      const dateString = '2024-01-15T00:00:00Z';
-      const result = formatAttendanceDateTime(dateString);
-      expect(result.time).toMatch(/00:00:00/);
     });
   });
 

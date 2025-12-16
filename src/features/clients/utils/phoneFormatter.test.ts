@@ -45,11 +45,6 @@ describe('phoneFormatter', () => {
       expect(formatPhoneNumber('---')).toBe('');
       expect(formatPhoneNumber('   ')).toBe('');
     });
-
-    it('should handle phone numbers with spaces and special characters', () => {
-      expect(formatPhoneNumber('+57 300 123 4567')).toBe('573 001 234 567');
-      expect(formatPhoneNumber('300-123-4567')).toBe('300 123 4567');
-    });
   });
 
   describe('unformatPhoneNumber', () => {

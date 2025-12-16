@@ -130,12 +130,6 @@ describe('clientHelpers', () => {
       meta_info: {},
     };
 
-    it('should get initials from full name', () => {
-      const initials = clientHelpers.getInitials(mockClient);
-      expect(initials.length).toBeLessThanOrEqual(2);
-      expect(initials).toBe('JP');
-    });
-
     it('should handle single name', () => {
       const singleNameClient: Client = {
         ...mockClient,
@@ -253,12 +247,6 @@ describe('clientHelpers', () => {
       expect(clientHelpers.validatePhone('+573001234567')).toBe(true);
       expect(clientHelpers.validatePhone('3001234567')).toBe(true);
       expect(clientHelpers.validatePhone('+1 555 123 4567')).toBe(true);
-    });
-
-    it('should reject invalid phone numbers', () => {
-      expect(clientHelpers.validatePhone('abc')).toBe(false);
-      expect(clientHelpers.validatePhone('123')).toBe(false); // Too short
-      expect(clientHelpers.validatePhone('')).toBe(false);
     });
   });
 

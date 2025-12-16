@@ -48,6 +48,9 @@ export const DATE_FORMATS = {
   time12: 'hh:mm:ss a',
 } as const;
 
+// Feature Flags
+export const IS_FACE_RECOGNITION_ENABLED = false;
+
 // Notification Messages
 export const NOTIFICATION_MESSAGES = {
   checkInSuccess: 'Check-in registrado exitosamente',
@@ -56,5 +59,6 @@ export const NOTIFICATION_MESSAGES = {
   checkInNoFace: 'No se detectó un rostro en la imagen',
   checkInNotRecognized: 'Rostro no reconocido',
   checkInExpired: 'Tu suscripción ha expirado',
+  featureDisabled: 'El reconocimiento facial está deshabilitado temporalmente',
 } as const;
 

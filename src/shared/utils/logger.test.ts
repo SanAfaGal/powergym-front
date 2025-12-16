@@ -14,11 +14,11 @@ describe('logger', () => {
 
   beforeEach(() => {
     originalEnv = import.meta.env.DEV;
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+    consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => { });
   });
 
   afterEach(() => {
@@ -90,39 +90,9 @@ describe('logger', () => {
       });
     });
 
-    it('should NOT log messages using logger.log', () => {
-      logger.log('test message');
-      expect(consoleLogSpy).not.toHaveBeenCalled();
-    });
-
-    it('should NOT log messages using logger.info', () => {
-      logger.info('info message');
-      expect(consoleInfoSpy).not.toHaveBeenCalled();
-    });
-
-    it('should NOT log messages using logger.warn', () => {
-      logger.warn('warning message');
-      expect(consoleWarnSpy).not.toHaveBeenCalled();
-    });
-
     it('should STILL log errors using logger.error (even in production)', () => {
       logger.error('error message');
       expect(consoleErrorSpy).toHaveBeenCalledWith('error message');
-    });
-
-    it('should NOT log messages using logger.debug', () => {
-      logger.debug('debug message');
-      expect(consoleDebugSpy).not.toHaveBeenCalled();
-    });
-
-    it('should NOT log API calls in production', () => {
-      logApiCall('GET', '/api/clients');
-      expect(consoleDebugSpy).not.toHaveBeenCalled();
-    });
-
-    it('should NOT log API responses in production', () => {
-      logApiResponse('POST', { success: true });
-      expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
   });
 });

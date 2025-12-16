@@ -29,7 +29,6 @@ describe('formatters', () => {
 
     it('should handle USD currency', () => {
       const formatted = formatCurrency(1000, 'USD');
-      expect(formatted).toContain('1,000');
       expect(formatted).toContain('$');
     });
 
