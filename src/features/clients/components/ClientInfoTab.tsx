@@ -41,18 +41,18 @@ interface ClientInfoTabProps {
  * @param props - ClientInfoTab component props
  * @returns JSX element
  */
-export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({ 
-  client, 
+export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
+  client,
   dashboard,
-  onCall, 
+  onCall,
   onWhatsApp,
   onEdit,
   onBiometric,
   onActivate,
 }): JSX.Element => {
   const age = clientHelpers.calculateAge(client.birth_date);
-  const fullName = dashboard ? `${dashboard.client.first_name} ${dashboard.client.last_name}` : 
-                   `${client.first_name} ${client.last_name}`;
+  const fullName = dashboard ? `${dashboard.client.first_name} ${dashboard.client.last_name}` :
+    `${client.first_name} ${client.last_name}`;
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -68,8 +68,8 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{fullName}</h2>
-              <Badge 
-                variant={dashboard?.client.is_active ? 'success' : 'error'} 
+              <Badge
+                variant={dashboard?.client.is_active ? 'success' : 'error'}
                 size="sm"
               >
                 {dashboard?.client.is_active ? 'Activo' : 'Inactivo'}
@@ -105,6 +105,7 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
           </Button>
           <Button
             onClick={onBiometric}
+            disabled={true}
             size="sm"
             variant="outline"
             leftIcon={<Fingerprint className="w-4 h-4" />}
@@ -122,18 +123,18 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
           <User className="w-4 h-4 text-blue-600" />
           Datos Personales
         </h3>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Tipo de Documento</span>
             <span className="text-sm font-medium text-gray-900">{client.dni_type}</span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Número de Documento</span>
             <span className="text-sm font-medium text-gray-900">{client.dni_number}</span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Fecha de Nacimiento</span>
             <span className="text-sm font-medium text-gray-900">
@@ -144,19 +145,19 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
               })}
             </span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Edad</span>
             <span className="text-sm font-medium text-gray-900">{age} años</span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Género</span>
             <span className="text-sm font-medium text-gray-900 capitalize">
               {client.gender === 'male' ? 'Masculino' : client.gender === 'female' ? 'Femenino' : 'Otro'}
             </span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 mb-1">Fecha de Registro</span>
             <span className="text-sm font-medium text-gray-900">
@@ -255,7 +256,7 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
           <Fingerprint className="w-4 h-4 text-purple-600" />
           Autenticación Biométrica
         </h3>
-        <BiometricStatus 
+        <BiometricStatus
           biometric={dashboard?.biometric ? {
             id: dashboard.biometric.id || '',
             type: 'face',
@@ -264,7 +265,7 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
             has_face_biometric: true,
             created_at: dashboard.biometric.created_at || new Date().toISOString(),
             updated_at: dashboard.biometric.updated_at || new Date().toISOString(),
-          } : undefined} 
+          } : undefined}
         />
       </div>
     </div>
