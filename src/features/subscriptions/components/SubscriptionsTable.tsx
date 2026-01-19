@@ -24,36 +24,7 @@ interface SubscriptionsTableProps {
   className?: string;
 }
 
-/**
- * Componente compartido para mostrar información de plan y días restantes
- */
-const SubscriptionPlanInfo: React.FC<{
-  subscription: Subscription;
-  plansMap: Map<string, Plan>;
-}> = ({ subscription, plansMap }) => {
-  const plan = plansMap.get(subscription.plan_id);
-  const daysRemaining = getDaysRemaining(subscription);
-  const planName = plan?.name || subscription.plan_id.slice(0, 8);
 
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2 text-sm">
-        <Package className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-        <span className="text-gray-600">Plan:</span>
-        <span className="font-medium text-gray-900 truncate">{planName}</span>
-      </div>
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-        <span className="text-gray-600">
-          {daysRemaining > 0
-            ? `${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`
-            : 'Expirada'
-          }
-        </span>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Sortable Column Header
@@ -247,7 +218,13 @@ const SubscriptionCard: React.FC<{
 
       {/* Plan and Days Remaining */}
       <div className="pt-3 border-t border-gray-100 space-y-3">
-        <SubscriptionPlanInfo subscription={subscription} plansMap={plansMap} />
+        <div className="flex items-center gap-2 text-sm">
+          <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <span className="text-gray-600">Plan:</span>
+          <span className="font-medium text-gray-900 truncate">
+            {plansMap.get(subscription.plan_id)?.name || subscription.plan_id.slice(0, 8)}
+          </span>
+        </div>
         <TimeStatus subscription={subscription} />
       </div>
     </motion.div>
@@ -446,23 +423,52 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
             Vencen esta semana
           </Button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Vencimiento:</span>
-            <input
-              type="date"
-              className="text-sm border rounded px-2 py-1"
-              value={filters.end_date_from || ''}
-              onChange={(e) => onFiltersChange({ ...filters, end_date_from: e.target.value, offset: 0 })}
-            />
-            <span className="text-xs text-gray-400">a</span>
-            <input
-              type="date"
-              className="text-sm border rounded px-2 py-1"
-              value={filters.end_date_to || ''}
-              onChange={(e) => onFiltersChange({ ...filters, end_date_to: e.target.value, offset: 0 })}
-            />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-gray-500 w-20 sm:w-auto">Desde:</span>
+              <input
+                type="date"
+                className="text-sm border rounded px-2 py-1 flex-1 sm:flex-none"
+                value={filters.end_date_from || ''}
+                onChange={(e) => onFiltersChange({ ...filters, end_date_from: e.target.value, offset: 0 })}
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-gray-500 w-20 sm:w-auto">Hasta:</span>
+              <input
+                type="date"
+                className="text-sm border rounded px-2 py-1 flex-1 sm:flex-none"
+                value={filters.end_date_to || ''}
+                onChange={(e) => onFiltersChange({ ...filters, end_date_to: e.target.value, offset: 0 })}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Mobile Sort Controls */}
+        {isMobile && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Ordenar por:</span>
+            <select
+              className="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1.5 outline-none"
+              value={`${filters.sort_by || 'created_at'}-${filters.sort_order || 'desc'}`}
+              onChange={(e) => {
+                const [sortBy, sortOrder] = e.target.value.split('-');
+                onFiltersChange({
+                  ...filters,
+                  sort_by: sortBy as any,
+                  sort_order: sortOrder as any,
+                });
+              }}
+            >
+              <option value="end_date-asc">Vencimiento (Más cercanos)</option>
+              <option value="end_date-desc">Vencimiento (Más lejanos)</option>
+              <option value="start_date-desc">Fecha Inicio (Más recientes)</option>
+              <option value="start_date-asc">Fecha Inicio (Más antiguos)</option>
+              <option value="created_at-desc">Fecha Creación (Nuevos)</option>
+            </select>
+          </div>
+        )}
       </Card>
 
       {/* Search info (only show if searching) */}
