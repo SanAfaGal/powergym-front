@@ -15,9 +15,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type ClientFormData } from '../..';
-import { clientHelpers, clientsApi } from '../..';
+import { clientHelpers } from '../..';
 import {
-  COUNTRY_CODES,
   DOCUMENT_TYPES,
   GENDER_OPTIONS,
   VALIDATION_RULES,
@@ -59,14 +58,14 @@ interface ClientFormProps {
  * Modern, visually enhanced client form component
  * Handles creation and editing of client information with improved UX
  */
-export const ClientForm = memo(({ 
-  initialData, 
-  clientId, 
-  onSuccess, 
-  onCancel 
+export const ClientForm = memo(({
+  initialData,
+  clientId,
+  onSuccess,
+  onCancel
 }: ClientFormProps) => {
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
-  
+
   // Extract phone codes from initial data if available
   const initialPhoneCode = useMemo(() => {
     if (initialData && 'phoneCode' in initialData && initialData.phoneCode) {
@@ -104,7 +103,7 @@ export const ClientForm = memo(({
   // Prepare initial form values - convert ClientFormData to form internal structure
   const initialFormValues = useMemo(() => {
     if (!initialData) return {};
-    
+
     const formData: FormInternalData = {
       document_type: initialData.dni_type,
       document_number: initialData.dni_number,
@@ -116,18 +115,18 @@ export const ClientForm = memo(({
       gender: initialData.gender,
       address: initialData.address,
     };
-    
+
     // Extract country codes and store only the numbers
     if (initialData.phone) {
       const { number } = extractCountryCode(initialData.phone);
       formData.phone_primary = number;
     }
-    
+
     if (initialData.alternative_phone) {
       const { number } = extractCountryCode(initialData.alternative_phone);
       formData.phone_secondary = number;
     }
-    
+
     return formData;
   }, [initialData]);
 
@@ -157,7 +156,7 @@ export const ClientForm = memo(({
   }, [birthDate]);
 
   // Format phone number with country code for API
-  const formatPhone = useCallback((phone: string, countryCode: string) => {
+  const formatPhone = useCallback((phone: string | undefined, countryCode: string) => {
     if (!phone) return '';
     const cleaned = unformatPhoneNumber(phone);
     return `${countryCode}${cleaned}`;
@@ -168,16 +167,16 @@ export const ClientForm = memo(({
    */
   const onSubmit = useCallback(async (data: FormInternalData) => {
     const apiData: ClientFormData = {
-      dni_type: data.document_type,
-      dni_number: data.document_number,
-      first_name: data.first_name,
+      dni_type: data.document_type || '',
+      dni_number: data.document_number || '',
+      first_name: data.first_name || '',
       middle_name: data.second_name || undefined,
-      last_name: data.first_surname,
+      last_name: data.first_surname || '',
       second_last_name: data.second_surname || undefined,
-      phone: formatPhone(data.phone_primary, phoneCode),
-      alternative_phone: data.phone_secondary ? formatPhone(data.phone_secondary, phoneCodeSecondary) : undefined,
-      birth_date: data.birth_date,
-      gender: data.gender,
+      phone: formatPhone(data.phone_primary, '+57'),
+      alternative_phone: data.phone_secondary ? formatPhone(data.phone_secondary, '+57') : undefined,
+      birth_date: data.birth_date || '',
+      gender: data.gender || 'male',
       address: data.address || undefined,
       is_active: true,
     };
@@ -203,9 +202,9 @@ export const ClientForm = memo(({
       // Check if error is related to duplicate DNI/cedula
       const isConflictError = error && typeof error === 'object' && 'status' in error && error.status === 409;
       const errorMessage = error instanceof Error ? error.message : '';
-      const isDniDuplicateError = isConflictError || 
+      const isDniDuplicateError = isConflictError ||
         (errorMessage && (
-          errorMessage.toLowerCase().includes('dni') || 
+          errorMessage.toLowerCase().includes('dni') ||
           errorMessage.toLowerCase().includes('already exists') ||
           errorMessage.toLowerCase().includes('ya existe') ||
           errorMessage.toLowerCase().includes('ya está registrado')
@@ -226,8 +225,8 @@ export const ClientForm = memo(({
         });
       } else {
         // Handle other errors
-        const genericErrorMessage = error instanceof Error 
-          ? error.message 
+        const genericErrorMessage = error instanceof Error
+          ? error.message
           : (clientId ? NOTIFICATION_MESSAGES.updateError : NOTIFICATION_MESSAGES.createError);
         showToast({
           type: 'error',
@@ -239,9 +238,9 @@ export const ClientForm = memo(({
   }, [formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess, setError]);
 
   // Memoized validation states
-  const isDocumentValid = useMemo(() => 
-    documentNumber && 
-    documentNumber.length >= DOCUMENT_VALIDATION.minLength && 
+  const isDocumentValid = useMemo(() =>
+    documentNumber &&
+    documentNumber.length >= DOCUMENT_VALIDATION.minLength &&
     !errors.document_number,
     [documentNumber, errors.document_number]
   );
@@ -294,9 +293,8 @@ export const ClientForm = memo(({
                   {...register('document_type', {
                     required: 'El tipo de documento es obligatorio',
                   })}
-                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${
-                    errors.document_type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
-                  }`}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${errors.document_type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                    }`}
                 >
                   <option value="">Seleccionar tipo...</option>
                   {DOCUMENT_TYPES.map((type: { value: string; label: string }) => (
@@ -400,7 +398,7 @@ export const ClientForm = memo(({
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Segundo nombre
               </label>
-              <Input 
+              <Input
                 {...register('second_name', {
                   minLength: {
                     value: VALIDATION_RULES.name.minLength,
@@ -415,7 +413,7 @@ export const ClientForm = memo(({
                     message: 'Solo se permiten letras y espacios',
                   },
                 })}
-                placeholder="Ej: Carlos" 
+                placeholder="Ej: Carlos"
                 error={errors.second_name?.message as string}
               />
             </motion.div>
@@ -459,7 +457,7 @@ export const ClientForm = memo(({
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Segundo apellido
               </label>
-              <Input 
+              <Input
                 {...register('second_surname', {
                   minLength: {
                     value: VALIDATION_RULES.name.minLength,
@@ -474,7 +472,7 @@ export const ClientForm = memo(({
                     message: 'Solo se permiten letras y espacios',
                   },
                 })}
-                placeholder="Ej: García" 
+                placeholder="Ej: García"
                 error={errors.second_surname?.message as string}
               />
             </motion.div>
@@ -497,15 +495,18 @@ export const ClientForm = memo(({
                     required: 'La fecha de nacimiento es obligatoria',
                     validate: {
                       notFuture: (value) => {
+                        if (!value) return true;
                         const selectedDate = new Date(value);
                         const today = new Date();
                         return selectedDate <= today || 'La fecha no puede ser futura';
                       },
                       minimumAge: (value) => {
+                        if (!value) return true;
                         const age = clientHelpers.calculateAge(value);
                         return age >= VALIDATION_RULES.age.minimum || `La edad mínima es ${VALIDATION_RULES.age.minimum} años`;
                       },
                       maximumAge: (value) => {
+                        if (!value) return true;
                         const age = clientHelpers.calculateAge(value);
                         return age <= VALIDATION_RULES.age.maximum || 'Por favor verifica la fecha de nacimiento';
                       },
@@ -547,9 +548,8 @@ export const ClientForm = memo(({
                   {...register('gender', {
                     required: 'El género es obligatorio',
                   })}
-                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${
-                    errors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
-                  }`}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${errors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                    }`}
                 >
                   <option value="">Seleccionar género...</option>
                   {GENDER_OPTIONS.map((gender: { value: string; label: string }) => (
@@ -604,17 +604,9 @@ export const ClientForm = memo(({
                 Teléfono principal *
               </label>
               <div className="flex gap-3">
-                <select
-                  value={phoneCode}
-                  onChange={(e) => setPhoneCode(e.target.value)}
-                  className="w-24 px-3 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all bg-white hover:border-gray-400 font-medium text-center"
-                >
-                  {COUNTRY_CODES.map((c: { code: string; name: string }) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-20 px-3 py-3.5 border-2 border-gray-200 bg-gray-50 rounded-xl text-gray-500 font-medium flex items-center justify-center select-none">
+                  +57
+                </div>
                 <Input
                   type="tel"
                   {...register('phone_primary', {
@@ -622,8 +614,8 @@ export const ClientForm = memo(({
                     validate: {
                       validFormat: (value) => {
                         const phoneNumber = unformatPhoneNumber(value);
-                        return VALIDATION_RULES.phone.pattern.test(phoneNumber) || 
-                          `El teléfono debe tener entre ${VALIDATION_RULES.phone.minLength} y ${VALIDATION_RULES.phone.maxLength} dígitos`;
+                        return phoneNumber.length === 10 ||
+                          'El teléfono debe tener exactamente 10 dígitos';
                       },
                     },
                   })}
@@ -663,17 +655,9 @@ export const ClientForm = memo(({
                 Teléfono alternativo
               </label>
               <div className="flex gap-3">
-                <select
-                  value={phoneCodeSecondary}
-                  onChange={(e) => setPhoneCodeSecondary(e.target.value)}
-                  className="w-24 px-3 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all bg-white hover:border-gray-400 font-medium text-center"
-                >
-                  {COUNTRY_CODES.map((c: { code: string; name: string }) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-20 px-3 py-3.5 border-2 border-gray-200 bg-gray-50 rounded-xl text-gray-500 font-medium flex items-center justify-center select-none">
+                  +57
+                </div>
                 <Input
                   type="tel"
                   {...register('phone_secondary', {
@@ -681,8 +665,8 @@ export const ClientForm = memo(({
                       validFormat: (value) => {
                         if (!value) return true;
                         const phoneNumber = unformatPhoneNumber(value);
-                        return VALIDATION_RULES.phone.pattern.test(phoneNumber) || 
-                          `El teléfono debe tener entre ${VALIDATION_RULES.phone.minLength} y ${VALIDATION_RULES.phone.maxLength} dígitos`;
+                        return phoneNumber.length === 10 ||
+                          'El teléfono debe tener exactamente 10 dígitos';
                       },
                     },
                   })}
@@ -725,9 +709,8 @@ export const ClientForm = memo(({
                   })}
                   placeholder="Ej: Calle 123 #45-67, Bogotá"
                   rows={3}
-                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all resize-none hover:border-gray-400 bg-white ${
-                    errors.address ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
-                  }`}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all resize-none hover:border-gray-400 bg-white ${errors.address ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                    }`}
                 />
               </div>
               {errors.address && (
@@ -783,10 +766,10 @@ export const ClientForm = memo(({
         transition={{ delay: 0.5 }}
         className="flex items-center justify-end gap-4 pt-6 border-t-2 border-gray-200"
       >
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel} 
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
           disabled={isSubmitting}
           className="px-8"
         >
