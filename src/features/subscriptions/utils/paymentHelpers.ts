@@ -12,9 +12,9 @@ import { isSubscriptionExpired } from './subscriptionHelpers';
  */
 export const formatCurrency = (amount: string | number): string => {
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+
   if (isNaN(numericAmount)) return 'Monto inválido';
-  
+
   return new Intl.NumberFormat(CURRENCY_CONFIG.locale, {
     style: 'currency',
     currency: 'COP',
@@ -89,13 +89,7 @@ export const canMakePayment = (
     };
   }
 
-  // Check if subscription is expired
-  if (subscription.status === SubscriptionStatus.EXPIRED || isSubscriptionExpired(subscription)) {
-    return {
-      canPay: false,
-      reason: 'No se pueden registrar pagos en suscripciones expiradas',
-    };
-  }
+
 
   // Check if subscription is fully paid
   if (isSubscriptionFullyPaid(paymentStats)) {
@@ -109,6 +103,7 @@ export const canMakePayment = (
   const allowedStatuses = [
     SubscriptionStatus.ACTIVE,
     SubscriptionStatus.PENDING_PAYMENT,
+    SubscriptionStatus.EXPIRED,
   ];
 
   if (!allowedStatuses.includes(subscription.status)) {
@@ -128,7 +123,7 @@ export const isRecentPayment = (payment: Payment): boolean => {
   const paymentDate = parseISO(payment.payment_date);
   const now = new Date();
   const hoursDiff = (now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60);
-  
+
   return hoursDiff <= 24;
 };
 
@@ -136,7 +131,7 @@ export const isRecentPayment = (payment: Payment): boolean => {
  * Sort payments by date (newest first)
  */
 export const sortPaymentsByDate = (payments: Payment[]): Payment[] => {
-  return [...payments].sort((a, b) => 
+  return [...payments].sort((a, b) =>
     new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
   );
 };
@@ -148,11 +143,11 @@ export const groupPaymentsByMonth = (payments: Payment[]): Record<string, Paymen
   return payments.reduce((groups, payment) => {
     const date = parseISO(payment.payment_date);
     const monthKey = format(date, 'yyyy-MM', { locale: es });
-    
+
     if (!groups[monthKey]) {
       groups[monthKey] = [];
     }
-    
+
     groups[monthKey].push(payment);
     return groups;
   }, {} as Record<string, Payment[]>);
@@ -177,7 +172,7 @@ export const calculatePaymentStats = (payments: Payment[]): {
 
   const totalAmount = calculateTotalPayments(payments);
   const sortedPayments = sortPaymentsByDate(payments);
-  
+
   return {
     totalPayments: payments.length,
     totalAmount,
@@ -190,7 +185,7 @@ export const calculatePaymentStats = (payments: Payment[]): {
  * Validate payment amount - only integers allowed
  */
 export const validatePaymentAmount = (
-  amount: string, 
+  amount: string,
   maxAmount?: number,
   remainingDebt?: number
 ): {
@@ -207,7 +202,7 @@ export const validatePaymentAmount = (
 
   // Check if it's a valid integer (no decimals)
   const numericAmount = parseFloat(amount);
-  
+
   if (isNaN(numericAmount)) {
     return {
       isValid: false,
@@ -222,7 +217,7 @@ export const validatePaymentAmount = (
       error: 'El monto debe ser un número entero (sin decimales)',
     };
   }
-  
+
   if (numericAmount <= 0) {
     return {
       isValid: false,
@@ -232,7 +227,7 @@ export const validatePaymentAmount = (
 
   // Use remainingDebt if available (more accurate), otherwise use maxAmount
   const maxAllowed = remainingDebt !== undefined ? remainingDebt : (maxAmount || Infinity);
-  
+
   if (numericAmount > maxAllowed) {
     const maxFormatted = formatCurrency(maxAllowed);
     return {
@@ -240,7 +235,7 @@ export const validatePaymentAmount = (
       error: `El monto no puede exceder ${maxFormatted}`,
     };
   }
-  
+
   return { isValid: true };
 };
 
@@ -266,7 +261,7 @@ export const calculatePaymentProgress = (
   totalRequired: number
 ): number => {
   if (totalRequired <= 0) return 100;
-  
+
   const progress = Math.min(Math.max((totalPaid / totalRequired) * 100, 0), 100);
   return Math.round(progress);
 };
@@ -281,7 +276,7 @@ export const isPaymentOverdue = (
   const endDate = parseISO(subscriptionEndDate);
   const gracePeriodEnd = new Date(endDate);
   gracePeriodEnd.setDate(gracePeriodEnd.getDate() + daysGracePeriod);
-  
+
   return new Date() > gracePeriodEnd;
 };
 
@@ -294,18 +289,18 @@ export const getPaymentStatus = (
   requiredAmount: number
 ): 'paid' | 'partial' | 'overdue' | 'pending' => {
   const totalPaid = calculateTotalPayments(payments);
-  
+
   if (totalPaid >= requiredAmount) {
     return 'paid';
   }
-  
+
   if (totalPaid > 0) {
     return 'partial';
   }
-  
+
   if (isPaymentOverdue(subscription.end_date)) {
     return 'overdue';
   }
-  
+
   return 'pending';
 };
