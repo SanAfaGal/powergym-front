@@ -7,7 +7,7 @@ import {
   SubscriptionsTable,
   SubscriptionDashboard,
 } from '../features/subscriptions';
-import { SubscriptionFilters } from '../features/subscriptions/api/types';
+import { SubscriptionFilters, SubscriptionStatus } from '../features/subscriptions/api/types';
 import { NOTIFICATION_MESSAGES, DEFAULT_PAGINATION } from '../features/subscriptions/constants/subscriptionConstants';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -22,6 +22,9 @@ export const SubscriptionsPage: React.FC = () => {
   const [filters, setFilters] = useState<SubscriptionFilters>({
     limit: DEFAULT_PAGINATION.limit,
     offset: DEFAULT_PAGINATION.offset,
+    status: SubscriptionStatus.ACTIVE,
+    sort_by: 'end_date',
+    sort_order: 'asc',
   });
   const [shouldFetch, setShouldFetch] = useState(true); // Cargar automáticamente al entrar a la página
   const [lastActionResult, setLastActionResult] = useState<{

@@ -60,26 +60,26 @@ export const SubscriptionDashboard: React.FC = () => {
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
             {cards.map((card, index) => (
                 <Card
                     key={index}
-                    className={`p-4 border ${card.borderColor} ${card.bgColor} relative overflow-hidden`}
+                    className={`p-3 md:p-4 border ${card.borderColor} ${card.bgColor} relative overflow-hidden`}
                 >
                     <div className="flex justify-between items-start z-10 relative">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <h3 className={`text-2xl font-bold ${card.color}`}>
+                        <div className="min-w-0">
+                            <p className="text-xs md:text-sm font-medium text-gray-600 truncate">{card.title}</p>
+                            <div className="flex flex-col md:flex-row md:items-baseline gap-0 md:gap-2 mt-1">
+                                <h3 className={`text-xl md:text-2xl font-bold ${card.color}`}>
                                     {card.value}
                                 </h3>
                                 {card.subtitle && (
-                                    <span className="text-xs text-gray-500">{card.subtitle}</span>
+                                    <span className="text-[10px] md:text-xs text-gray-500">{card.subtitle}</span>
                                 )}
                             </div>
                         </div>
-                        <div className={`p-2 rounded-lg ${card.color} bg-white/60`}>
-                            <card.icon className="w-5 h-5" />
+                        <div className={`p-1.5 md:p-2 rounded-lg ${card.color} bg-white/60 flex-shrink-0 ml-2`}>
+                            <card.icon className="w-4 h-4 md:w-5 md:h-5" />
                         </div>
                     </div>
                 </Card>
