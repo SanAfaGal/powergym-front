@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SubscriptionsTable } from '../features/subscriptions/components/SubscriptionsTable';
-import { 
-  useAllSubscriptions, 
-  useExpireSubscriptions, 
-  useActivateSubscriptions 
+import {
+  useAllSubscriptions,
+  useExpireSubscriptions,
+  useActivateSubscriptions,
+  SubscriptionsTable,
+  SubscriptionDashboard,
 } from '../features/subscriptions';
 import { SubscriptionFilters } from '../features/subscriptions/api/types';
 import { NOTIFICATION_MESSAGES, DEFAULT_PAGINATION } from '../features/subscriptions/constants/subscriptionConstants';
@@ -70,7 +71,7 @@ export const SubscriptionsPage: React.FC = () => {
   const handleExpireSubscriptions = useCallback(async () => {
     try {
       const response = await expireSubscriptionsMutation.mutateAsync();
-      
+
       // Guardar resultado para mostrar banner
       setLastActionResult({
         type: 'expire',
@@ -81,7 +82,7 @@ export const SubscriptionsPage: React.FC = () => {
       // Mostrar un solo toast con el resultado
       showToast({
         title: response.expired_count > 0 ? '✓ Operación Completada' : 'Sin Cambios',
-        message: response.expired_count > 0 
+        message: response.expired_count > 0
           ? `Se ${response.expired_count === 1 ? 'expiró' : 'expiraron'} ${response.expired_count} suscripción${response.expired_count !== 1 ? 'es' : ''}.`
           : 'No había suscripciones pendientes de expirar.',
         type: response.expired_count > 0 ? 'success' : 'info',
@@ -96,27 +97,27 @@ export const SubscriptionsPage: React.FC = () => {
       }, 8000);
     } catch (error: unknown) {
       // Detectar errores de CORS o red
-      const errorObj = error as { 
-        response?: { data?: { detail?: string } }; 
+      const errorObj = error as {
+        response?: { data?: { detail?: string } };
         message?: string;
         type?: string;
         status?: number;
       };
-      
-      const isNetworkError = errorObj.type === 'network' || 
-                            errorObj.status === 0 ||
-                            errorObj.message?.includes('CORS') ||
-                            errorObj.message?.includes('conexión') ||
-                            errorObj.message?.includes('fetch');
 
-      let errorMessage = errorObj.response?.data?.detail || 
-                        errorObj.message || 
-                        NOTIFICATION_MESSAGES.error.generic;
+      const isNetworkError = errorObj.type === 'network' ||
+        errorObj.status === 0 ||
+        errorObj.message?.includes('CORS') ||
+        errorObj.message?.includes('conexión') ||
+        errorObj.message?.includes('fetch');
+
+      let errorMessage = errorObj.response?.data?.detail ||
+        errorObj.message ||
+        NOTIFICATION_MESSAGES.error.generic;
 
       // Si es un error de red/CORS pero la operación podría haberse completado
       if (isNetworkError) {
         errorMessage = 'Error de conexión con el servidor. La operación puede haberse completado. Por favor, actualiza la lista para verificar.';
-        
+
         // Mostrar banner indicando que puede haberse completado
         setLastActionResult({
           type: 'expire',
@@ -145,7 +146,7 @@ export const SubscriptionsPage: React.FC = () => {
   const handleActivateSubscriptions = useCallback(async () => {
     try {
       const response = await activateSubscriptionsMutation.mutateAsync();
-      
+
       // Guardar resultado para mostrar banner
       setLastActionResult({
         type: 'activate',
@@ -171,27 +172,27 @@ export const SubscriptionsPage: React.FC = () => {
       }, 8000);
     } catch (error: unknown) {
       // Detectar errores de CORS o red
-      const errorObj = error as { 
-        response?: { data?: { detail?: string } }; 
+      const errorObj = error as {
+        response?: { data?: { detail?: string } };
         message?: string;
         type?: string;
         status?: number;
       };
-      
-      const isNetworkError = errorObj.type === 'network' || 
-                            errorObj.status === 0 ||
-                            errorObj.message?.includes('CORS') ||
-                            errorObj.message?.includes('conexión') ||
-                            errorObj.message?.includes('fetch');
 
-      let errorMessage = errorObj.response?.data?.detail || 
-                        errorObj.message || 
-                        NOTIFICATION_MESSAGES.error.generic;
+      const isNetworkError = errorObj.type === 'network' ||
+        errorObj.status === 0 ||
+        errorObj.message?.includes('CORS') ||
+        errorObj.message?.includes('conexión') ||
+        errorObj.message?.includes('fetch');
+
+      let errorMessage = errorObj.response?.data?.detail ||
+        errorObj.message ||
+        NOTIFICATION_MESSAGES.error.generic;
 
       // Si es un error de red/CORS pero la operación podría haberse completado
       if (isNetworkError) {
         errorMessage = 'Error de conexión con el servidor. La operación puede haberse completado. Por favor, actualiza la lista para verificar.';
-        
+
         // Mostrar banner indicando que puede haberse completado
         setLastActionResult({
           type: 'activate',
@@ -231,17 +232,18 @@ export const SubscriptionsPage: React.FC = () => {
       }
     >
       <div className="space-y-6">
+        {/* Dashboard de métricas */}
+        <SubscriptionDashboard />
+
         {/* Banner de resultado de acción reciente */}
         {lastActionResult && (
-          <Card className={`p-4 border-2 ${
-            lastActionResult.type === 'expire' 
-              ? 'bg-orange-50 border-orange-300' 
-              : 'bg-green-50 border-green-300'
-          }`}>
+          <Card className={`p-4 border-2 ${lastActionResult.type === 'expire'
+            ? 'bg-orange-50 border-orange-300'
+            : 'bg-green-50 border-green-300'
+            }`}>
             <div className="flex items-start gap-3">
-              <div className={`flex-shrink-0 ${
-                lastActionResult.type === 'expire' ? 'text-orange-600' : 'text-green-600'
-              }`}>
+              <div className={`flex-shrink-0 ${lastActionResult.type === 'expire' ? 'text-orange-600' : 'text-green-600'
+                }`}>
                 {lastActionResult.type === 'expire' ? (
                   <Clock className="w-5 h-5" />
                 ) : (
@@ -250,18 +252,16 @@ export const SubscriptionsPage: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className={`text-sm font-semibold ${
-                    lastActionResult.type === 'expire' ? 'text-orange-900' : 'text-green-900'
-                  }`}>
+                  <h3 className={`text-sm font-semibold ${lastActionResult.type === 'expire' ? 'text-orange-900' : 'text-green-900'
+                    }`}>
                     {lastActionResult.type === 'expire' ? 'Suscripciones Expiradas' : 'Suscripciones Activadas'}
                   </h3>
                   {isRefetching && (
                     <RefreshCw className="w-3 h-3 text-gray-500 animate-spin" />
                   )}
                 </div>
-                <p className={`text-sm ${
-                  lastActionResult.type === 'expire' ? 'text-orange-800' : 'text-green-800'
-                }`}>
+                <p className={`text-sm ${lastActionResult.type === 'expire' ? 'text-orange-800' : 'text-green-800'
+                  }`}>
                   {lastActionResult.count > 0 ? (
                     <>
                       <span className="font-semibold">{lastActionResult.count}</span> suscripción{lastActionResult.count !== 1 ? 'es' : ''} {lastActionResult.type === 'expire' ? 'expirada' : 'activada'}{lastActionResult.count !== 1 ? 's' : ''} exitosamente.
@@ -291,11 +291,10 @@ export const SubscriptionsPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setLastActionResult(null)}
-                className={`flex-shrink-0 p-1 rounded transition-colors ${
-                  lastActionResult.type === 'expire' 
-                    ? 'text-orange-600 hover:bg-orange-200' 
-                    : 'text-green-600 hover:bg-green-200'
-                }`}
+                className={`flex-shrink-0 p-1 rounded transition-colors ${lastActionResult.type === 'expire'
+                  ? 'text-orange-600 hover:bg-orange-200'
+                  : 'text-green-600 hover:bg-green-200'
+                  }`}
                 aria-label="Cerrar"
               >
                 <X className="w-4 h-4" />

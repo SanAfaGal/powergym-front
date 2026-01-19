@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UUID } from '../../../shared/types/common';
+import { UUID, PaginationParams } from '../../../shared/types/common';
 import { subscriptionKeys } from '../api/types';
 import {
   createSubscription,
@@ -13,16 +13,16 @@ import {
   getAllSubscriptions,
   expireSubscriptions,
   activateSubscriptions,
+  getSubscriptionStats,
 } from '../api/subscriptionApi';
 import {
   Subscription,
   SubscriptionCreateInput,
   SubscriptionRenewInput,
   SubscriptionCancelInput,
-  PaginationParams,
   SubscriptionFilters,
 } from '../api/types';
-import { QUERY_STALE_TIMES, QUERY_CACHE_TIMES, RETRY_CONFIG, NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
+import { QUERY_STALE_TIMES, QUERY_CACHE_TIMES, RETRY_CONFIG } from '../constants/subscriptionConstants';
 
 // Hook to get all subscriptions for a client
 export const useSubscriptions = (
@@ -78,7 +78,7 @@ export const useCreateSubscription = () => {
       queryClient.invalidateQueries({
         queryKey: subscriptionKeys.list(variables.clientId),
       });
-      
+
       // CRITICAL: Invalidate active subscription (new subscription might be active)
       queryClient.invalidateQueries({
         queryKey: subscriptionKeys.active(variables.clientId),
@@ -108,14 +108,14 @@ export const useRenewSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ 
-      clientId, 
-      subscriptionId, 
-      data 
-    }: { 
-      clientId: UUID; 
-      subscriptionId: UUID; 
-      data?: SubscriptionRenewInput 
+    mutationFn: ({
+      clientId,
+      subscriptionId,
+      data
+    }: {
+      clientId: UUID;
+      subscriptionId: UUID;
+      data?: SubscriptionRenewInput
     }) => renewSubscription(clientId, subscriptionId, data),
     onSuccess: (data, variables) => {
       // Update the subscription in cache
@@ -150,14 +150,14 @@ export const useCancelSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ 
-      clientId, 
-      subscriptionId, 
-      data 
-    }: { 
-      clientId: UUID; 
-      subscriptionId: UUID; 
-      data?: SubscriptionCancelInput 
+    mutationFn: ({
+      clientId,
+      subscriptionId,
+      data
+    }: {
+      clientId: UUID;
+      subscriptionId: UUID;
+      data?: SubscriptionCancelInput
     }) => cancelSubscription(clientId, subscriptionId, data),
     onSuccess: (data, variables) => {
       // Update the subscription in cache
@@ -197,12 +197,11 @@ export const useUpdateSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ 
-      subscriptionId, 
+    mutationFn: ({
+      subscriptionId,
       data,
-      clientId,
-    }: { 
-      subscriptionId: UUID; 
+    }: {
+      subscriptionId: UUID;
       data: Partial<SubscriptionCreateInput>;
       clientId?: UUID;
     }) => updateSubscription(subscriptionId, data),
@@ -236,10 +235,9 @@ export const useDeleteSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ 
+    mutationFn: ({
       subscriptionId,
-      clientId,
-    }: { 
+    }: {
       subscriptionId: UUID;
       clientId?: UUID;
     }) => deleteSubscription(subscriptionId),
@@ -314,5 +312,14 @@ export const useActivateSubscriptions = () => {
         queryKey: subscriptionKeys.all(),
       });
     },
+  });
+};
+
+// Hook to get subscription stats
+export const useSubscriptionStats = () => {
+  return useQuery({
+    queryKey: ['subscriptionStats'],
+    queryFn: getSubscriptionStats,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

@@ -94,6 +94,10 @@ export interface SubscriptionFilters {
   client_id?: UUID;
   limit?: number;
   offset?: number;
+  sort_by?: 'created_at' | 'end_date' | 'start_date';
+  sort_order?: 'asc' | 'desc';
+  end_date_from?: string;
+  end_date_to?: string;
 }
 
 // Subscription Management Response Types
@@ -107,6 +111,13 @@ export interface ActivateSubscriptionsResponse {
   activated_count: number;
   execution_time: string;
   reference_date: string;
+}
+
+export interface DashboardStats {
+  active_count: number;
+  expiring_soon_count: number;
+  expired_count: number;
+  expiring_today_count: number;
 }
 
 // Query Keys Factory

@@ -8,6 +8,7 @@ import {
   SubscriptionStatus,
   ExpireSubscriptionsResponse,
   ActivateSubscriptionsResponse,
+  DashboardStats,
 } from './types';
 
 // Subscription API functions
@@ -31,7 +32,7 @@ export const getSubscriptions = async (
   params: PaginationParams = {}
 ): Promise<Subscription[]> => {
   const { limit = 100, offset = 0 } = params;
-  
+
   return apiClient.get<Subscription[]>(API_ENDPOINTS.subscriptions.list(clientId), {
     params: { limit, offset }
   });
@@ -105,14 +106,22 @@ export const getAllSubscriptions = async (
     client_id?: UUID;
     limit?: number;
     offset?: number;
+    sort_by?: string;
+    sort_order?: string;
+    end_date_from?: string;
+    end_date_to?: string;
   } = {}
 ): Promise<Subscription[]> => {
-  const { status, client_id, limit = 100, offset = 0 } = params;
-  
+  const { status, client_id, limit = 100, offset = 0, sort_by, sort_order, end_date_from, end_date_to } = params;
+
   return apiClient.get<Subscription[]>(API_ENDPOINTS.subscriptions.all, {
     params: {
       ...(status && { status: String(status) }),
       ...(client_id && { client_id }),
+      ...(sort_by && { sort_by }),
+      ...(sort_order && { sort_order }),
+      ...(end_date_from && { end_date_from }),
+      ...(end_date_to && { end_date_to }),
       limit,
       offset,
     }
@@ -133,4 +142,11 @@ export const expireSubscriptions = async (): Promise<ExpireSubscriptionsResponse
 export const activateSubscriptions = async (): Promise<ActivateSubscriptionsResponse> => {
   logger.debug('Activating scheduled subscriptions');
   return apiClient.post<ActivateSubscriptionsResponse>(API_ENDPOINTS.subscriptions.activate);
+};
+
+/**
+ * Get subscription dashboard stats
+ */
+export const getSubscriptionStats = async (): Promise<DashboardStats> => {
+  return apiClient.get<DashboardStats>('/subscriptions/stats');
 };

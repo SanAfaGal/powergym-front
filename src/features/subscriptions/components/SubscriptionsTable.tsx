@@ -10,8 +10,8 @@ import { useClientsMap } from '../../../features/clients/hooks/useClients';
 import { useActivePlans } from '../../../features/plans';
 import { clientHelpers } from '../../../features/clients/utils/clientHelpers';
 import { Client } from '../../../features/clients/types';
-import { Plan } from '../api/types';
-import { Search, X, User, Calendar, Package } from 'lucide-react';
+import { Plan } from '../../../features/plans/api/types';
+import { Search, X, User, Calendar, Package, ArrowUp, ArrowDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Pagination } from '../../../components/ui/Pagination';
 
@@ -45,11 +45,92 @@ const SubscriptionPlanInfo: React.FC<{
       <div className="flex items-center gap-2 text-sm">
         <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
         <span className="text-gray-600">
-          {daysRemaining > 0 
+          {daysRemaining > 0
             ? `${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`
             : 'Expirada'
           }
         </span>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Sortable Column Header
+ */
+const SortableHeader: React.FC<{
+  label: string;
+  field: string;
+  currentSort?: string;
+  currentOrder?: 'asc' | 'desc';
+  onSort: (field: string) => void;
+  className?: string;
+}> = ({ label, field, currentSort, currentOrder, onSort, className = '' }) => {
+  const isSorted = currentSort === field;
+
+  return (
+    <th
+      className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors group ${className}`}
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        <div className={`flex flex-col ${isSorted ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+          {isSorted && currentOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+        </div>
+      </div>
+    </th>
+  );
+};
+
+/**
+ * Visual Time Status (Progress Bar)
+ */
+const TimeStatus: React.FC<{
+  subscription: Subscription;
+}> = ({ subscription }) => {
+  const daysRemaining = getDaysRemaining(subscription);
+  const totalDuration = new Date(subscription.end_date).getTime() - new Date(subscription.start_date).getTime();
+  const elapsed = new Date().getTime() - new Date(subscription.start_date).getTime();
+
+  let percentage = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+  if (totalDuration <= 0) percentage = 100;
+
+  // Color logic
+  let colorClass = 'bg-green-500';
+  let textClass = 'text-green-700';
+  let bgClass = 'bg-green-50';
+
+  if (daysRemaining <= 0) {
+    colorClass = 'bg-gray-400';
+    textClass = 'text-gray-500';
+    bgClass = 'bg-gray-100';
+    percentage = 100;
+  } else if (daysRemaining <= 3) {
+    colorClass = 'bg-red-500';
+    textClass = 'text-red-700';
+    bgClass = 'bg-red-50';
+  } else if (daysRemaining <= 7) {
+    colorClass = 'bg-amber-500';
+    textClass = 'text-amber-700';
+    bgClass = 'bg-amber-50';
+  }
+
+  return (
+    <div className="w-full">
+      <div className={`flex items-center gap-2 text-xs font-medium ${textClass} mb-1.5`}>
+        <Calendar size={12} />
+        <span>
+          {daysRemaining > 0
+            ? `Quedan ${daysRemaining} días`
+            : 'Expirada'}
+        </span>
+      </div>
+      <div className={`h-1.5 w-full rounded-full overflow-hidden ${bgClass}`}>
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
+          style={{ width: `${percentage}%` }}
+        />
       </div>
     </div>
   );
@@ -66,49 +147,48 @@ const SubscriptionRow: React.FC<{
   plansMap: Map<string, Plan>;
 }> = ({ subscription, onViewClient, index, clientsMap, plansMap }) => {
   const client = clientsMap.get(subscription.client_id);
-  const clientName = client 
+  const clientName = client
     ? clientHelpers.formatFullName(client)
     : subscription.client_id.slice(0, 8);
+  const plan = plansMap.get(subscription.plan_id);
+  const planName = plan?.name || subscription.plan_id.slice(0, 8);
 
   return (
-    <motion.div
+    <motion.tr
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15, delay: index * 0.03 }}
-      className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-100 last:border-0"
+      className="hover:bg-gray-50 border-b border-gray-100 last:border-0"
     >
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        {/* Status Badge */}
-        <div className="flex-shrink-0">
-          <SubscriptionStatusBadge status={subscription.status} />
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <div className="font-medium text-gray-900">{clientName}</div>
         </div>
-
-        {/* Client Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <button
-              onClick={() => onViewClient(subscription.client_id)}
-              className="text-sm font-semibold text-gray-900 hover:text-primary-600 transition-colors truncate"
-            >
-              {clientName}
-            </button>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-            <span>ID: {subscription.id.slice(0, 8)}</span>
-            <span>•</span>
-            <span>{formatDate(subscription.start_date)}</span>
-            <span>→</span>
-            <span>{formatDate(subscription.end_date)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Plan and Days Remaining */}
-      <div className="flex-shrink-0 min-w-[200px]">
-        <SubscriptionPlanInfo subscription={subscription} plansMap={plansMap} />
-      </div>
-    </motion.div>
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-900">{planName}</div>
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap">
+        <SubscriptionStatusBadge status={subscription.status} />
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+        {formatDate(subscription.start_date)}
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+        {formatDate(subscription.end_date)}
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap w-48">
+        <TimeStatus subscription={subscription} />
+      </td>
+      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <button
+          onClick={() => onViewClient(subscription.client_id)}
+          className="text-primary-600 hover:text-primary-900"
+        >
+          Ver Cliente
+        </button>
+      </td>
+    </motion.tr>
   );
 };
 
@@ -123,7 +203,7 @@ const SubscriptionCard: React.FC<{
   plansMap: Map<string, Plan>;
 }> = ({ subscription, onViewClient, index, clientsMap, plansMap }) => {
   const client = clientsMap.get(subscription.client_id);
-  const clientName = client 
+  const clientName = client
     ? clientHelpers.formatFullName(client)
     : subscription.client_id.slice(0, 8);
 
@@ -166,8 +246,9 @@ const SubscriptionCard: React.FC<{
       </div>
 
       {/* Plan and Days Remaining */}
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-3 border-t border-gray-100 space-y-3">
         <SubscriptionPlanInfo subscription={subscription} plansMap={plansMap} />
+        <TimeStatus subscription={subscription} />
       </div>
     </motion.div>
   );
@@ -194,7 +275,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
 
   // Get plans only when there are subscriptions (lazy load)
   const { data: plans = [] } = useActivePlans();
-  
+
   // Create plans map for quick lookup
   const plansMap = useMemo(() => {
     const map = new Map<string, Plan>();
@@ -225,13 +306,13 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
     return subscriptions.filter(sub => {
       const matchesId = sub.id.toLowerCase().includes(query) ||
         sub.client_id.toLowerCase().includes(query);
-      
+
       // Also search by client name if available
       const client = clientsMap.get(sub.client_id);
-      const matchesName = client 
+      const matchesName = client
         ? clientHelpers.formatFullName(client).toLowerCase().includes(query)
         : false;
-      
+
       return matchesId || matchesName;
     });
   }, [subscriptions, searchQuery, clientsMap]);
@@ -343,6 +424,45 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
             )}
           </div>
         </div>
+
+        {/* Date Filters */}
+        <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+          <Button
+            variant={filters.end_date_to && filters.end_date_from ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => {
+              const today = new Date();
+              const nextWeek = new Date();
+              nextWeek.setDate(today.getDate() + 7);
+
+              onFiltersChange({
+                ...filters,
+                end_date_from: today.toISOString().split('T')[0],
+                end_date_to: nextWeek.toISOString().split('T')[0],
+                offset: 0
+              });
+            }}
+          >
+            Vencen esta semana
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Vencimiento:</span>
+            <input
+              type="date"
+              className="text-sm border rounded px-2 py-1"
+              value={filters.end_date_from || ''}
+              onChange={(e) => onFiltersChange({ ...filters, end_date_from: e.target.value, offset: 0 })}
+            />
+            <span className="text-xs text-gray-400">a</span>
+            <input
+              type="date"
+              className="text-sm border rounded px-2 py-1"
+              value={filters.end_date_to || ''}
+              onChange={(e) => onFiltersChange({ ...filters, end_date_to: e.target.value, offset: 0 })}
+            />
+          </div>
+        </div>
       </Card>
 
       {/* Search info (only show if searching) */}
@@ -381,30 +501,81 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
         </Card>
       ) : (
         <>
-          <Card className="p-0 overflow-hidden">
-            <div className={isMobile ? 'space-y-3 p-4' : 'space-y-1 p-2'}>
-              {filteredSubscriptions.map((subscription, index) =>
-                isMobile ? (
+          <Card className="overflow-hidden border-0 shadow-sm ring-1 ring-black/5">
+            {isMobile ? (
+              <div className="space-y-3 p-4">
+                {filteredSubscriptions.map((subscription, index) => (
                   <SubscriptionCard
                     key={subscription.id}
                     subscription={subscription}
-                    onViewClient={onViewClient || (() => {})}
+                    onViewClient={onViewClient || (() => { })}
                     index={index}
                     clientsMap={clientsMap}
                     plansMap={plansMap}
                   />
-                ) : (
-                  <SubscriptionRow
-                    key={subscription.id}
-                    subscription={subscription}
-                    onViewClient={onViewClient || (() => {})}
-                    index={index}
-                    clientsMap={clientsMap}
-                    plansMap={plansMap}
-                  />
-                )
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <SortableHeader
+                        label="Cliente"
+                        field="client_name" // Note: sorting by client name might be tricky if backend doesn't support joined sort, for now it might just do nothing or we handle id
+                        currentSort={filters.sort_by}
+                        currentOrder={filters.sort_order}
+                        onSort={() => { }} // Client name sort TBD
+                      />
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Plan
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <SortableHeader
+                        label="Fecha Inicio"
+                        field="start_date"
+                        currentSort={filters.sort_by}
+                        currentOrder={filters.sort_order}
+                        onSort={(field) => {
+                          const newOrder = filters.sort_by === field && filters.sort_order === 'desc' ? 'asc' : 'desc';
+                          onFiltersChange({ ...filters, sort_by: field as any, sort_order: newOrder });
+                        }}
+                      />
+                      <SortableHeader
+                        label="Fecha Fin"
+                        field="end_date"
+                        currentSort={filters.sort_by}
+                        currentOrder={filters.sort_order}
+                        onSort={(field) => {
+                          const newOrder = filters.sort_by === field && filters.sort_order === 'desc' ? 'asc' : 'desc';
+                          onFiltersChange({ ...filters, sort_by: field as any, sort_order: newOrder });
+                        }}
+                      />
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Progreso / Vencimiento
+                      </th>
+                      <th className="relative px-4 py-3">
+                        <span className="sr-only">Acciones</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredSubscriptions.map((subscription, index) => (
+                      <SubscriptionRow
+                        key={subscription.id}
+                        subscription={subscription}
+                        onViewClient={onViewClient || (() => { })}
+                        index={index}
+                        clientsMap={clientsMap}
+                        plansMap={plansMap}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
 
           {/* Pagination */}

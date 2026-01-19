@@ -23,6 +23,7 @@ export { RenewSubscriptionModal } from './components/RenewSubscriptionModal';
 export { CalculateRewardButton } from './components/CalculateRewardButton';
 export { FloatingRewardButton } from './components/FloatingRewardButton';
 export { SubscriptionsTable } from './components/SubscriptionsTable';
+export { SubscriptionDashboard } from './components/SubscriptionDashboard';
 // Note: SubscriptionsTab has been moved to features/clients/components/SubscriptionsTab
 
 // Utility exports
